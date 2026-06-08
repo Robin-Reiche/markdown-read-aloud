@@ -8,6 +8,12 @@ function xmlEscape(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/** Derive a BCP-47 locale from a voice short name, e.g. "de-DE-Seraphina…" -> "de-DE". */
+function localeFromVoice(voice: string): string {
+  const m = voice.match(/^[a-z]{2,3}-[A-Za-z]{2,}/);
+  return m ? m[0] : 'en-US';
+}
+
 /**
  * Microsoft Edge neural TTS via the (free, key-less) read-aloud endpoint.
  * Runs in the Node extension host.
@@ -23,14 +29,17 @@ export class EdgeEngine implements TtsEngine {
 
   private tts: MsEdgeTTS | null = null;
   private voice = '';
+  private locale = '';
   private targetVoice = '';
+  private targetLocale = '';
   private tail: Promise<unknown> = Promise.resolve();
 
-  setVoice(voiceShortName: string): Promise<void> {
+  setVoice(voiceShortName: string, locale?: string): Promise<void> {
     this.targetVoice = voiceShortName;
+    this.targetLocale = locale || localeFromVoice(voiceShortName);
     return this.enqueue(async () => {
-      if (this.voice === voiceShortName && this.tts) return;
-      await this.connect(voiceShortName);
+      if (this.voice === this.targetVoice && this.locale === this.targetLocale && this.tts) return;
+      await this.connect(this.targetVoice, this.targetLocale);
     });
   }
 
@@ -48,18 +57,21 @@ export class EdgeEngine implements TtsEngine {
     return run as Promise<T>;
   }
 
-  private async connect(voice: string): Promise<void> {
+  private async connect(voice: string, locale: string): Promise<void> {
     this.closeSocket();
     const tts = new MsEdgeTTS();
-    await tts.setMetadata(voice, FORMAT);
+    // voiceLocale sets the SSML xml:lang, which pins the language a multilingual
+    // voice speaks in (so a German doc isn't occasionally read as French, etc.).
+    await tts.setMetadata(voice, FORMAT, { voiceLocale: locale });
     this.tts = tts;
     this.voice = voice;
+    this.locale = locale;
   }
 
   private async synthOnce(text: string, retry = true): Promise<Buffer> {
     const escaped = xmlEscape(text);
     if (!escaped.trim()) return Buffer.alloc(0);
-    if (!this.tts) await this.connect(this.targetVoice || this.voice);
+    if (!this.tts) await this.connect(this.targetVoice || this.voice, this.targetLocale || this.locale);
 
     try {
       const buf = await this.streamToBuffer(escaped);
@@ -67,13 +79,13 @@ export class EdgeEngine implements TtsEngine {
       // bytes (no 'error'). Treat an empty result for real text as a failure and
       // retry once on a fresh connection.
       if (buf.length === 0 && retry) {
-        await this.connect(this.voice);
+        await this.connect(this.voice, this.locale);
         return this.synthOnce(text, false);
       }
       return buf;
     } catch (err) {
       if (retry) {
-        await this.connect(this.voice);
+        await this.connect(this.voice, this.locale);
         return this.synthOnce(text, false);
       }
       throw err;
@@ -111,5 +123,6 @@ export class EdgeEngine implements TtsEngine {
   dispose(): void {
     this.closeSocket();
     this.voice = '';
+    this.locale = '';
   }
 }

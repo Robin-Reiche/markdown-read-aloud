@@ -42,8 +42,12 @@ export interface ReadJob {
 export interface TtsEngine {
   readonly id: string;
   readonly mime: string;
-  /** Set (and connect) the active voice. Cheap no-op if unchanged. */
-  setVoice(voiceShortName: string): Promise<void>;
+  /**
+   * Set (and connect) the active voice and the language to speak in.
+   * The locale pins pronunciation (xml:lang) — important for multilingual voices.
+   * Cheap no-op if unchanged.
+   */
+  setVoice(voiceShortName: string, locale?: string): Promise<void>;
   /** Synthesize text to an audio buffer in `mime` format. */
   synth(text: string): Promise<Buffer>;
   dispose(): void;

@@ -397,6 +397,8 @@
     post({ type: 'setLocale', locale: e.target.value });
   });
 
+  $('detect-lang').addEventListener('click', () => post({ type: 'detectLanguage' }));
+
   function onControl(action) {
     if (action === 'playpause') togglePlay();
     else if (action === 'stop') doStop();

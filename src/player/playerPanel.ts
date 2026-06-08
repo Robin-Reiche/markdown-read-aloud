@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import type { Chunk, Gender, OutlineItem, ReadJob, TtsEngine } from '../types';
 import { EdgeEngine } from '../engines/edgeEngine';
+import { detectLocale } from '../languageDetector';
 import { allCuratedLocales, curatedPair, displayName, getVoice, localeDisplay, pickVoice, voicesForLocale } from '../voices';
 
 function nonce(): string {
@@ -92,7 +93,7 @@ export class PlayerPanel {
     this.currentVoice = pickVoice(job.locale, this.gender, overrides);
     const rate = cfg.get<number>('speed', 1);
 
-    if (this.engineId === 'edge') this.engine.setVoice(this.currentVoice).catch(() => {});
+    if (this.engineId === 'edge') this.engine.setVoice(this.currentVoice, this.activeLocale).catch(() => {});
 
     this.panel.title = `▶ ${job.title}`;
     this.panel.reveal(vscode.ViewColumn.Beside, true);
@@ -135,6 +136,9 @@ export class PlayerPanel {
         break;
       case 'setLocale':
         this.changeLocale(m.locale);
+        break;
+      case 'detectLanguage':
+        this.detectLanguage();
         break;
       case 'persistSpeed':
         await vscode.workspace
@@ -215,6 +219,16 @@ export class PlayerPanel {
     this.setActiveVoice(voice, this.gender, locale);
   }
 
+  /** Re-detect the document language from its text and switch to it. */
+  private detectLanguage() {
+    if (!this.job) return;
+    const fallback = vscode.workspace.getConfiguration('markdownReadAloud').get<string>('fallbackLanguage', 'en-US');
+    const text = this.job.chunks.map((c) => c.text).join(' ').slice(0, 3000);
+    const det = detectLocale(text, fallback);
+    this.changeLocale(det.locale);
+    vscode.window.setStatusBarMessage(`Read Aloud: detected ${localeDisplay(det.locale)}`, 3000);
+  }
+
   /** Pick a specific voice (from the full voice dropdown). */
   private changeVoice(shortName: string) {
     const v = getVoice(shortName);
@@ -230,7 +244,7 @@ export class PlayerPanel {
     this.generation++; // discard any in-flight old-voice synths
     this.cache.clear();
     this.inflight.clear();
-    if (this.engineId === 'edge') this.engine.setVoice(voice).catch(() => {});
+    if (this.engineId === 'edge') this.engine.setVoice(voice, locale).catch(() => {});
     this.post({ type: 'voiceUi', ...this.voiceUiPayload() });
   }
 
@@ -356,7 +370,10 @@ export class PlayerPanel {
       <summary>Language &amp; all voices</summary>
       <div class="advanced-body">
         <label class="adv-label" for="lang-select">Language</label>
-        <select id="lang-select"></select>
+        <div class="lang-row">
+          <select id="lang-select"></select>
+          <button id="detect-lang" class="detect-btn" title="Detect the document's language and switch to it">⤿ Detect</button>
+        </div>
         <label class="adv-label" for="voice-select">Voice</label>
         <select id="voice-select"></select>
       </div>
