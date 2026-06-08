@@ -13,6 +13,7 @@
   let unlocked = false;
   let waitingFor = -1;
   let pendingGesture = null;
+  let totalChars = 0;
   const PREFETCH = 2;
 
   const urlCache = new Map(); // index -> objectURL
@@ -28,7 +29,7 @@
       case 'audio': onAudio(m); break;
       case 'audioError': onAudioError(m); break;
       case 'engineFallback': switchToBrowser(); break;
-      case 'voiceChanged': onVoiceChanged(m); break;
+      case 'voiceUi': onVoiceUi(m); break;
       case 'control': onControl(m.action); break;
     }
   });
@@ -42,13 +43,15 @@
     cursor = m.startIndex || 0;
     clearAudioCache();
 
+    totalChars = job.chunks.reduce((s, c) => s + c.text.length, 0);
     $('title').textContent = job.title;
-    $('lang').textContent = job.localeName + ' · ' + job.chunks.length + ' sentences';
+    renderHeader();
     audio.playbackRate = rate;
     $('speed').value = String(rate);
     $('speed-val').textContent = rate.toFixed(2).replace(/0$/, '') + '×';
 
     renderGender();
+    renderLangSelect();
     renderVoiceSelect();
     renderOutline();
     renderTranscript();
@@ -239,11 +242,21 @@
   }
 
   // ---------- voice / gender ----------
-  function onVoiceChanged(m) {
+  function onVoiceUi(m) {
     clearAudioCache();
-    if (job) { job.currentVoice = m.currentVoice; job.gender = m.gender; }
+    if (job) {
+      job.locale = m.locale;
+      job.localeName = m.localeName;
+      job.voicePair = m.voicePair;
+      job.allVoices = m.allVoices;
+      job.currentVoice = m.currentVoice;
+      job.gender = m.gender;
+    }
+    renderHeader();
     renderGender();
-    if ($('voice-select')) $('voice-select').value = m.currentVoice;
+    renderVoiceSelect();
+    if ($('lang-select')) $('lang-select').value = m.locale;
+    if (engine === 'browser') initSynthVoices();
     if (playing && engine === 'edge') { audio.pause(); playAt(cursor); }
     else if (playing && engine === 'browser') speak(cursor);
   }
@@ -285,6 +298,34 @@
       sel.appendChild(og);
     }
     sel.value = job.currentVoice;
+  }
+
+  function renderLangSelect() {
+    const sel = $('lang-select');
+    if (!sel || !job.locales) return;
+    sel.innerHTML = '';
+    for (const l of job.locales) {
+      const o = document.createElement('option');
+      o.value = l.locale;
+      o.textContent = l.name;
+      sel.appendChild(o);
+    }
+    sel.value = job.locale;
+  }
+
+  // Rough reading-time estimate (chars/sec at the current speed). Edge neural
+  // voices read ~14 chars/sec at 1.0×.
+  const CHARS_PER_SEC = 14;
+  function estLabel() {
+    if (!totalChars) return '';
+    const sec = totalChars / CHARS_PER_SEC / Math.max(0.5, rate);
+    return sec < 90 ? '~' + Math.round(sec) + ' s' : '~' + Math.round(sec / 60) + ' min';
+  }
+  function renderHeader() {
+    if (!job) return;
+    const est = estLabel();
+    $('lang').textContent =
+      job.localeName + ' · ' + job.chunks.length + ' sentences' + (est ? ' · ' + est : '');
   }
 
   function renderOutline() {
@@ -342,6 +383,7 @@
     rate = Number($('speed').value);
     audio.playbackRate = rate;
     $('speed-val').textContent = rate.toFixed(2).replace(/0$/, '') + '×';
+    renderHeader(); // update the estimated reading time live
   });
   $('speed').addEventListener('change', () => post({ type: 'persistSpeed', value: rate }));
 
@@ -349,9 +391,11 @@
   $('g-male').addEventListener('click', () => post({ type: 'setGender', gender: 'male' }));
 
   $('voice-select').addEventListener('change', (e) => {
-    const shortName = e.target.value;
-    const v = job.allVoices.find((x) => x.shortName === shortName);
-    post({ type: 'setVoice', shortName, gender: v ? v.gender : job.gender });
+    post({ type: 'setVoice', shortName: e.target.value });
+  });
+
+  $('lang-select').addEventListener('change', (e) => {
+    post({ type: 'setLocale', locale: e.target.value });
   });
 
   function onControl(action) {

@@ -8,3 +8,4 @@ test_data/
 .vscode-test/
 *.log
 .DS_Store
+ui-mockups/

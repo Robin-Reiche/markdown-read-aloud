@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import type { Chunk, Gender, OutlineItem, ReadJob, TtsEngine } from '../types';
 import { EdgeEngine } from '../engines/edgeEngine';
-import { curatedPair, displayName, localeDisplay, pickVoice, voicesForLocale } from '../voices';
+import { allCuratedLocales, curatedPair, displayName, getVoice, localeDisplay, pickVoice, voicesForLocale } from '../voices';
 
 function nonce(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -25,6 +25,7 @@ export class PlayerPanel {
   private docUri?: vscode.Uri;
   private currentVoice = '';
   private gender: Gender = 'female';
+  private activeLocale = ''; // language the voice picker / gender toggle operate on
 
   private generation = 0; // bumped on new job / voice change to discard stale synths
   private hadSuccess = false; // have we ever gotten audio from Edge this session?
@@ -87,6 +88,7 @@ export class PlayerPanel {
     const overrides = cfg.get<Record<string, string>>('voiceOverrides', {});
     this.gender = cfg.get<Gender>('preferredGender', 'female');
     this.engineId = this.resolveEngine(cfg); // re-resolve so a new read retries Edge after a fallback
+    this.activeLocale = job.locale;
     this.currentVoice = pickVoice(job.locale, this.gender, overrides);
     const rate = cfg.get<number>('speed', 1);
 
@@ -127,10 +129,13 @@ export class PlayerPanel {
         this.panel.title = this.job ? this.job.title : 'Read Aloud';
         break;
       case 'setGender':
-        await this.changeGender(m.gender);
+        this.changeGender(m.gender);
         break;
       case 'setVoice':
-        await this.changeVoice(m.shortName, m.gender);
+        this.changeVoice(m.shortName);
+        break;
+      case 'setLocale':
+        this.changeLocale(m.locale);
         break;
       case 'persistSpeed':
         await vscode.workspace
@@ -195,26 +200,61 @@ export class PlayerPanel {
     this.post({ type: 'audio', index, mime: this.engine.mime, bytes: ab });
   }
 
-  private async changeGender(gender: Gender) {
-    this.gender = gender;
-    if (!this.job) return;
-    const overrides = vscode.workspace.getConfiguration('markdownReadAloud').get<Record<string, string>>('voiceOverrides', {});
-    const voice = pickVoice(this.job.locale, gender, overrides);
-    await this.applyVoice(voice, gender);
+  private overrides(): Record<string, string> {
+    return vscode.workspace.getConfiguration('markdownReadAloud').get<Record<string, string>>('voiceOverrides', {});
   }
 
-  private async changeVoice(shortName: string, gender?: Gender) {
-    await this.applyVoice(shortName, gender ?? this.gender);
+  /** Switch ♀/♂ within the currently active language. */
+  private changeGender(gender: Gender) {
+    const voice = pickVoice(this.activeLocale, gender, this.overrides());
+    this.setActiveVoice(voice, gender, this.activeLocale);
   }
 
-  private async applyVoice(voice: string, gender: Gender) {
+  /** Switch to another language: pick that language's curated voice for the current gender. */
+  private changeLocale(locale: string) {
+    const voice = pickVoice(locale, this.gender, this.overrides());
+    this.setActiveVoice(voice, this.gender, locale);
+  }
+
+  /** Pick a specific voice (from the full voice dropdown). */
+  private changeVoice(shortName: string) {
+    const v = getVoice(shortName);
+    const gender: Gender = v && v.gender.toLowerCase() === 'male' ? 'male' : 'female';
+    const locale = v ? v.locale : this.activeLocale;
+    this.setActiveVoice(shortName, gender, locale);
+  }
+
+  private setActiveVoice(voice: string, gender: Gender, locale: string) {
     this.currentVoice = voice;
     this.gender = gender;
+    this.activeLocale = locale;
     this.generation++; // discard any in-flight old-voice synths
     this.cache.clear();
     this.inflight.clear();
     if (this.engineId === 'edge') this.engine.setVoice(voice).catch(() => {});
-    this.post({ type: 'voiceChanged', currentVoice: voice, gender, name: displayName(voice) });
+    this.post({ type: 'voiceUi', ...this.voiceUiPayload() });
+  }
+
+  /** Everything the webview needs to render the voice/language controls for the active locale. */
+  private voiceUiPayload() {
+    const pair = curatedPair(this.activeLocale);
+    return {
+      locale: this.activeLocale,
+      localeName: localeDisplay(this.activeLocale),
+      voicePair: {
+        female: pair.female ? { shortName: pair.female, name: displayName(pair.female) } : undefined,
+        male: pair.male ? { shortName: pair.male, name: displayName(pair.male) } : undefined,
+      },
+      allVoices: voicesForLocale(this.activeLocale).map((v) => ({
+        shortName: v.shortName,
+        name: displayName(v.shortName),
+        gender: v.gender.toLowerCase(),
+        multilingual: v.multilingual,
+      })),
+      currentVoice: this.currentVoice,
+      currentVoiceName: displayName(this.currentVoice),
+      gender: this.gender,
+    };
   }
 
   // ---- highlighting --------------------------------------------------------
@@ -246,27 +286,12 @@ export class PlayerPanel {
   // ---- serialization for the webview --------------------------------------
 
   private serializeJob(job: ReadJob) {
-    const pair = curatedPair(job.locale);
-    const all = voicesForLocale(job.locale).map((v) => ({
-      shortName: v.shortName,
-      name: displayName(v.shortName),
-      gender: v.gender.toLowerCase(),
-      multilingual: v.multilingual,
-    }));
     return {
       title: job.title,
-      locale: job.locale,
-      localeName: localeDisplay(job.locale),
       chunks: job.chunks.map((c: Chunk) => ({ index: c.index, text: c.text, kind: c.kind })),
       outline: job.outline,
-      voicePair: {
-        female: pair.female ? { shortName: pair.female, name: displayName(pair.female) } : undefined,
-        male: pair.male ? { shortName: pair.male, name: displayName(pair.male) } : undefined,
-      },
-      allVoices: all,
-      currentVoice: this.currentVoice,
-      currentVoiceName: displayName(this.currentVoice),
-      gender: this.gender,
+      locales: allCuratedLocales(),
+      ...this.voiceUiPayload(),
     };
   }
 
@@ -298,41 +323,45 @@ export class PlayerPanel {
 </head>
 <body>
   <div id="app">
-    <div id="header">
+    <div id="head">
       <div id="title">Read Aloud</div>
       <div id="lang"></div>
     </div>
 
     <div id="transcript" aria-live="polite"></div>
 
-    <div id="scrubrow">
-      <span id="time-cur">0:00</span>
-      <input id="scrub" type="range" min="0" max="1000" value="0" step="1" />
-      <span id="time-total">0:00</span>
+    <div id="progress">
+      <input id="scrub" type="range" min="0" max="1000" value="0" step="1" aria-label="Seek" />
+      <div id="times"><span id="time-cur">0:00</span><span id="time-total">0:00</span></div>
     </div>
 
-    <div id="controls">
-      <button id="prev" title="Previous sentence">⏮</button>
-      <button id="play" class="primary" title="Play / Pause">▶</button>
-      <button id="stop" title="Stop">⏹</button>
-      <button id="next" title="Next sentence">⏭</button>
+    <div id="transport">
+      <button id="prev" class="ghost" title="Previous sentence">⏮</button>
+      <button id="play" class="play" title="Play / Pause">▶</button>
+      <button id="stop" class="ghost" title="Stop">⏹</button>
+      <button id="next" class="ghost" title="Next sentence">⏭</button>
     </div>
 
-    <div id="row-speed">
-      <label>Speed <span id="speed-val">1.0×</span></label>
-      <input id="speed" type="range" min="0.5" max="2.5" value="1" step="0.05" />
-    </div>
-
-    <div id="row-voice">
-      <div id="gender-toggle">
+    <div id="meta">
+      <div id="gender-toggle" class="pill">
         <button data-gender="female" id="g-female">♀ <span id="g-female-name">Female</span></button>
         <button data-gender="male" id="g-male">♂ <span id="g-male-name">Male</span></button>
       </div>
-      <details id="advanced">
-        <summary>All voices for this language</summary>
-        <select id="voice-select"></select>
-      </details>
+      <div id="speedwrap">
+        <input id="speed" type="range" min="0.5" max="2.5" value="1" step="0.05" aria-label="Speed" />
+        <span id="speed-val">1.0×</span>
+      </div>
     </div>
+
+    <details id="advanced">
+      <summary>Language &amp; all voices</summary>
+      <div class="advanced-body">
+        <label class="adv-label" for="lang-select">Language</label>
+        <select id="lang-select"></select>
+        <label class="adv-label" for="voice-select">Voice</label>
+        <select id="voice-select"></select>
+      </div>
+    </details>
 
     <div id="outline"></div>
 

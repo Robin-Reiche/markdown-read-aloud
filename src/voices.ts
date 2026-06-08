@@ -77,6 +77,13 @@ export function localeDisplay(locale: string): string {
   }
 }
 
+/** All locales we have a curated voice for, with English display names, sorted. */
+export function allCuratedLocales(): { locale: string; name: string }[] {
+  return Object.keys(curated)
+    .map((locale) => ({ locale, name: localeDisplay(locale) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export const catalogInfo = {
   voiceCount: voicesData.voiceCount,
   localeCount: voicesData.localeCount,
