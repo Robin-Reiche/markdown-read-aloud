@@ -15,3 +15,5 @@ Initial release.
 - Robust Markdown handling (headings, lists, links, tables, code fences, frontmatter and
   special characters are turned into clean prose).
 - Automatic fallback to system voices when the Edge endpoint is unreachable.
+- One consistent voice per document by default; optional per-paragraph language
+  switching (`perParagraphLanguage`) for mixed-language documents.

@@ -13,6 +13,8 @@ Markdown to get through than time to read it.
   models behind Azure's "natural" voices) — genuinely expressive, not robotic.
 - **🌍 Automatic language detection.** Reads German with a German voice, English with
   an English voice, and so on across **75 languages** — detected from the file itself.
+  One consistent voice per document by default; optional per-paragraph switching for
+  mixed-language files.
 - **♀ ♂ Curated voices, not a wall of options.** One great female and one great male
   voice per language by default. Power users can still pick any voice.
 - **⏩ Speed & start point you control.** 0.5×–2.5× live, start from the cursor, a
@@ -49,7 +51,8 @@ Switch via the `markdownReadAloud.engine` setting.
 | `markdownReadAloud.engine` | `edge` | TTS engine to use. |
 | `markdownReadAloud.preferredGender` | `female` | Default voice gender. |
 | `markdownReadAloud.speed` | `1.0` | Default playback speed (0.5–2.5). |
-| `markdownReadAloud.autoDetectLanguage` | `true` | Detect language and pick a matching voice. |
+| `markdownReadAloud.autoDetectLanguage` | `true` | Detect the document's main language and pick a matching voice. |
+| `markdownReadAloud.perParagraphLanguage` | `false` | Switch voice per paragraph to match each paragraph's language (mixed-language docs). Off = one consistent voice (easier to follow). |
 | `markdownReadAloud.fallbackLanguage` | `en-US` | Used when detection is unreliable. |
 | `markdownReadAloud.voiceOverrides` | `{}` | Per-language voice override, e.g. `{ "de-DE": "de-DE-KatjaNeural" }`. |
 | `markdownReadAloud.announceHeadings` | `false` | Say "Heading" before headings. |
