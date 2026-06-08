@@ -331,10 +331,15 @@
   function renderOutline() {
     const box = $('outline');
     box.innerHTML = '';
+    if (!job.outline.length) return;
+    const head = document.createElement('div');
+    head.className = 'outline-head';
+    head.textContent = 'Sections — click to jump';
+    box.appendChild(head);
     for (const item of job.outline) {
       const b = document.createElement('button');
       b.className = 'outline-item';
-      b.style.paddingLeft = 4 + (item.level - 1) * 12 + 'px';
+      b.style.paddingLeft = 8 + (item.level - 1) * 14 + 'px';
       b.textContent = item.label;
       b.dataset.index = String(item.chunkIndex);
       b.addEventListener('click', () => { startFlow(() => { cursor = item.chunkIndex; playing = true; setPlayIcon(); playAt(item.chunkIndex); }); });

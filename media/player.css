@@ -150,24 +150,30 @@ input[type='range']::-webkit-slider-thumb:hover { transform: scale(1.15); }
 #outline {
   display: flex;
   flex-direction: column;
-  max-height: 30vh;
-  overflow: auto;
+  gap: 2px;
   border-top: 1px solid var(--line);
   padding-top: 10px;
 }
 #outline:empty { display: none; }
+.outline-head {
+  font-size: 0.72em;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--dim);
+  margin-bottom: 4px;
+}
 .outline-item {
   text-align: left;
   background: none;
   border: none;
   color: var(--dim);
   cursor: pointer;
-  padding: 5px 6px;
+  padding: 6px 8px;
   border-radius: 5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.92em;
+  font-size: 0.95em;
+  line-height: 1.45;
+  white-space: normal;
+  word-break: break-word;
   transition: background 0.1s, color 0.1s;
 }
 .outline-item:hover { background: var(--hover); color: var(--vscode-foreground); }
