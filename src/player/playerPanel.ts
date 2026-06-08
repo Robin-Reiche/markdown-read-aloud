@@ -98,7 +98,6 @@ export class PlayerPanel {
     this.panel.reveal(vscode.ViewColumn.Beside, true);
     this.post({
       type: 'load',
-      autostart: true,
       startIndex,
       engine: this.engineId,
       rate,
@@ -364,10 +363,6 @@ export class PlayerPanel {
     </details>
 
     <div id="outline"></div>
-
-    <div id="gesture-overlay" class="hidden">
-      <button id="gesture-play">▶ Click to start reading</button>
-    </div>
   </div>
   <script nonce="${n}" src="${js}"></script>
 </body>

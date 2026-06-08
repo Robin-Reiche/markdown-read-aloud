@@ -10,9 +10,7 @@
   let rate = 1;
   let cursor = 0;
   let playing = false;
-  let unlocked = false;
   let waitingFor = -1;
-  let pendingGesture = null;
   let totalChars = 0;
   const PREFETCH = 2;
 
@@ -57,27 +55,15 @@
     renderTranscript();
 
     if (engine === 'browser') initSynthVoices();
-
-    if (m.autostart) startFlow(() => doPlay());
+    setPlayIcon();
+    prewarm(); // fetch the first chunk(s) so Play starts instantly
   }
-
-  // ---------- gesture gate (first play needs a user gesture) ----------
-  function startFlow(cb) {
-    if (unlocked) { cb(); return; }
-    pendingGesture = cb;
-    $('gesture-overlay').classList.remove('hidden');
-  }
-  $('gesture-play').addEventListener('click', () => {
-    unlocked = true;
-    $('gesture-overlay').classList.add('hidden');
-    const cb = pendingGesture; pendingGesture = null;
-    if (cb) cb();
-  });
+  // No "click to start" overlay: the in-player Play button click is itself the
+  // user gesture the browser requires to begin audio playback.
 
   // ---------- transport ----------
   function doPlay() {
     if (!job) return;
-    unlocked = true;
     playing = true;
     setPlayIcon();
     if (engine === 'edge') {
@@ -104,7 +90,7 @@
 
   function togglePlay() {
     if (playing) doPause();
-    else startFlow(() => doPlay());
+    else doPlay();
   }
 
   function doStop() {
@@ -149,8 +135,9 @@
 
   function onPlayBlocked(err) {
     if (err && err.name === 'NotAllowedError') {
-      playing = false; setPlayIcon();
-      startFlow(() => doPlay());
+      // Shouldn't happen now (Play is a user gesture), but stay safe.
+      playing = false;
+      setPlayIcon();
     }
   }
 
@@ -172,6 +159,13 @@
 
   function prefetch(index) {
     for (let k = 1; k <= PREFETCH; k++) requestChunk(index + k);
+  }
+
+  // Warm the start chunk(s) on load so pressing Play begins without delay.
+  function prewarm() {
+    if (engine !== 'edge' || !job) return;
+    requestChunk(cursor);
+    prefetch(cursor);
   }
 
   function onAudio(m) {
@@ -342,7 +336,7 @@
       b.style.paddingLeft = 8 + (item.level - 1) * 14 + 'px';
       b.textContent = item.label;
       b.dataset.index = String(item.chunkIndex);
-      b.addEventListener('click', () => { startFlow(() => { cursor = item.chunkIndex; playing = true; setPlayIcon(); playAt(item.chunkIndex); }); });
+      b.addEventListener('click', () => { cursor = item.chunkIndex; playing = true; setPlayIcon(); playAt(item.chunkIndex); });
       box.appendChild(b);
     }
     highlightOutline();
@@ -376,8 +370,8 @@
   // ---------- controls ----------
   $('play').addEventListener('click', togglePlay);
   $('stop').addEventListener('click', doStop);
-  $('next').addEventListener('click', () => startFlow(() => { playing = true; setPlayIcon(); playAt(cursor + 1); }));
-  $('prev').addEventListener('click', () => startFlow(() => { playing = true; setPlayIcon(); playAt(cursor - 1); }));
+  $('next').addEventListener('click', () => { playing = true; setPlayIcon(); playAt(cursor + 1); });
+  $('prev').addEventListener('click', () => { playing = true; setPlayIcon(); playAt(cursor - 1); });
 
   $('scrub').addEventListener('input', () => {
     if (engine !== 'edge' || !audio.duration) return;
