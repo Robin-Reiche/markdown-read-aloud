@@ -1,0 +1,225 @@
+{
+  "name": "markdown-read-aloud",
+  "displayName": "Markdown Read Aloud",
+  "description": "Read Markdown files aloud with high-quality, free neural voices. Auto language detection, speed & start-point control, curated male/female voices.",
+  "version": "0.1.0",
+  "publisher": "robinreiche",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/robinreiche/markdown-read-aloud"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "markdown",
+    "tts",
+    "text-to-speech",
+    "read aloud",
+    "accessibility",
+    "voice",
+    "speech",
+    "neural"
+  ],
+  "main": "./dist/extension.js",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#2563eb",
+    "theme": "dark"
+  },
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "markdownReadAloud.readDocument",
+        "title": "Read Aloud: Read Whole Document",
+        "icon": "$(unmute)"
+      },
+      {
+        "command": "markdownReadAloud.readFromCursor",
+        "title": "Read Aloud: Read from Cursor"
+      },
+      {
+        "command": "markdownReadAloud.readSelection",
+        "title": "Read Aloud: Read Selection"
+      },
+      {
+        "command": "markdownReadAloud.togglePlayPause",
+        "title": "Read Aloud: Play / Pause"
+      },
+      {
+        "command": "markdownReadAloud.stop",
+        "title": "Read Aloud: Stop"
+      },
+      {
+        "command": "markdownReadAloud.openPlayer",
+        "title": "Read Aloud: Open Player"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "markdownReadAloud.readDocument",
+          "when": "resourceLangId == markdown",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "markdownReadAloud.readFromCursor",
+          "when": "editorLangId == markdown && !editorHasSelection",
+          "group": "navigation@9"
+        },
+        {
+          "command": "markdownReadAloud.readSelection",
+          "when": "editorLangId == markdown && editorHasSelection",
+          "group": "navigation@9"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "markdownReadAloud.readDocument",
+          "when": "resourceLangId == markdown"
+        },
+        {
+          "command": "markdownReadAloud.readFromCursor",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "markdownReadAloud.readSelection",
+          "when": "editorLangId == markdown"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "markdownReadAloud.readFromCursor",
+        "key": "ctrl+alt+r",
+        "mac": "cmd+alt+r",
+        "when": "editorLangId == markdown && editorTextFocus"
+      },
+      {
+        "command": "markdownReadAloud.togglePlayPause",
+        "key": "ctrl+alt+space",
+        "mac": "cmd+alt+space"
+      }
+    ],
+    "configuration": {
+      "title": "Markdown Read Aloud",
+      "properties": {
+        "markdownReadAloud.engine": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "supertonic",
+            "browser"
+          ],
+          "enumDescriptions": [
+            "Microsoft Edge neural voices — free, cloud quality, needs internet (recommended)",
+            "Supertonic — fully offline neural voices (downloads ~260 MB models on first use)",
+            "System voices via the browser engine — works offline, lower quality (last resort)"
+          ],
+          "default": "edge",
+          "markdownDescription": "Which text-to-speech engine to use."
+        },
+        "markdownReadAloud.preferredGender": {
+          "type": "string",
+          "enum": [
+            "female",
+            "male"
+          ],
+          "default": "female",
+          "description": "Preferred voice gender when auto-selecting a voice for a language."
+        },
+        "markdownReadAloud.speed": {
+          "type": "number",
+          "default": 1,
+          "minimum": 0.5,
+          "maximum": 2.5,
+          "description": "Default playback speed (0.5×–2.5×). Adjustable live in the player."
+        },
+        "markdownReadAloud.autoDetectLanguage": {
+          "type": "boolean",
+          "default": true,
+          "description": "Detect the document language automatically and pick a matching voice."
+        },
+        "markdownReadAloud.fallbackLanguage": {
+          "type": "string",
+          "default": "en-US",
+          "description": "Language (BCP-47) to use when detection is unreliable or unsupported."
+        },
+        "markdownReadAloud.voiceOverrides": {
+          "type": "object",
+          "default": {},
+          "markdownDescription": "Advanced: override the voice per language, e.g. `{ \"de-DE\": \"de-DE-KatjaNeural\" }`. Open the player to see voice IDs.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "markdownReadAloud.announceHeadings": {
+          "type": "boolean",
+          "default": false,
+          "description": "Say \"Heading\" before each heading. Off by default (gets repetitive)."
+        },
+        "markdownReadAloud.codeBlocks": {
+          "type": "string",
+          "enum": [
+            "skip",
+            "announce",
+            "read"
+          ],
+          "enumDescriptions": [
+            "Ignore code blocks entirely",
+            "Say \"code block\" instead of reading the code",
+            "Read the code aloud (usually unintelligible)"
+          ],
+          "default": "announce",
+          "description": "How to handle fenced code blocks."
+        },
+        "markdownReadAloud.tables": {
+          "type": "string",
+          "enum": [
+            "skip",
+            "read"
+          ],
+          "default": "skip",
+          "description": "How to handle tables. Reading them aloud is usually noisy."
+        },
+        "markdownReadAloud.highlightWhileReading": {
+          "type": "boolean",
+          "default": true,
+          "description": "Highlight and scroll to the sentence currently being read in the editor."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node esbuild.js --production",
+    "watch": "node esbuild.js --watch",
+    "typecheck": "tsc --noEmit",
+    "package": "vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "eld": "^2.0.3",
+    "msedge-tts": "^2.0.5",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.0",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.4",
+    "unist-util-visit": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.5.0"
+  }
+}

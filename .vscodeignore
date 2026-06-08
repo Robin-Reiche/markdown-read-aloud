@@ -1,0 +1,20 @@
+# Everything is bundled into dist/ by esbuild, so source & deps are excluded.
+.vscode/**
+.vscode-test/**
+src/**
+scripts/**
+voice_samples/**
+test_data/**
+node_modules/**
+**/*.ts
+**/*.map
+.gitignore
+.vscodeignore
+esbuild.js
+tsconfig.json
+**/tsconfig.json
+dist/smoke.cjs
+dist/**/*.map
+**/.eslintrc*
+**/*.md.bak
+.github/**

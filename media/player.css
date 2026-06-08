@@ -1,0 +1,178 @@
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size, 13px);
+  color: var(--vscode-foreground);
+  background: var(--vscode-editor-background);
+  padding: 12px 14px;
+  margin: 0;
+}
+
+#app {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+#header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+#title {
+  font-weight: 600;
+  font-size: 1.05em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#lang {
+  font-size: 0.85em;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+#transcript {
+  min-height: 3.2em;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--vscode-textBlockQuote-background, rgba(127,127,127,0.1));
+  border-left: 3px solid var(--vscode-focusBorder, #007acc);
+  line-height: 1.5;
+}
+#transcript .done { opacity: 0.45; }
+#transcript .cur { font-weight: 600; }
+
+#scrubrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8em;
+  opacity: 0.85;
+}
+#scrub { flex: 1; }
+
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--vscode-scrollbarSlider-background, rgba(127,127,127,0.4));
+  cursor: pointer;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--vscode-button-background, #0e639c);
+}
+
+#controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+#controls button {
+  font-size: 1.1em;
+  min-width: 40px;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+  background: var(--vscode-button-secondaryBackground, rgba(127,127,127,0.15));
+  cursor: pointer;
+}
+#controls button:hover { background: var(--vscode-button-secondaryHoverBackground, rgba(127,127,127,0.3)); }
+#controls .primary {
+  min-width: 56px;
+  height: 44px;
+  font-size: 1.3em;
+  color: var(--vscode-button-foreground, #fff);
+  background: var(--vscode-button-background, #0e639c);
+}
+#controls .primary:hover { background: var(--vscode-button-hoverBackground, #1177bb); }
+
+#row-speed { display: flex; align-items: center; gap: 10px; }
+#row-speed label { white-space: nowrap; opacity: 0.85; }
+#row-speed #speed { flex: 1; }
+#speed-val { font-variant-numeric: tabular-nums; opacity: 0.9; }
+
+#row-voice { display: flex; flex-direction: column; gap: 8px; }
+#gender-toggle { display: flex; gap: 8px; }
+#gender-toggle button {
+  flex: 1;
+  height: 34px;
+  border-radius: 6px;
+  border: 1px solid var(--vscode-contrastBorder, transparent);
+  background: var(--vscode-button-secondaryBackground, rgba(127,127,127,0.15));
+  color: var(--vscode-foreground);
+  cursor: pointer;
+}
+#gender-toggle button.active {
+  background: var(--vscode-button-background, #0e639c);
+  color: var(--vscode-button-foreground, #fff);
+}
+
+#advanced summary { cursor: pointer; opacity: 0.8; font-size: 0.9em; }
+#voice-select {
+  width: 100%;
+  margin-top: 6px;
+  padding: 5px;
+  border-radius: 5px;
+  background: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  border: 1px solid var(--vscode-dropdown-border, transparent);
+}
+
+#outline {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 200px;
+  overflow: auto;
+  border-top: 1px solid var(--vscode-panel-border, rgba(127,127,127,0.2));
+  padding-top: 8px;
+}
+.outline-item {
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  padding: 3px 4px;
+  border-radius: 4px;
+  opacity: 0.85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.outline-item:hover { background: var(--vscode-list-hoverBackground, rgba(127,127,127,0.15)); }
+.outline-item.active { color: var(--vscode-focusBorder, #007acc); opacity: 1; font-weight: 600; }
+
+#gesture-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--vscode-editor-background);
+}
+#gesture-overlay.hidden { display: none; }
+#gesture-play {
+  font-size: 1.1em;
+  padding: 14px 22px;
+  border: none;
+  border-radius: 8px;
+  color: var(--vscode-button-foreground, #fff);
+  background: var(--vscode-button-background, #0e639c);
+  cursor: pointer;
+}

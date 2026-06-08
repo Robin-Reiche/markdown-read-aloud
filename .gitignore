@@ -1,0 +1,10 @@
+node_modules/
+dist/
+out/
+*.vsix
+voice_samples/
+# private test fixture — kept locally, not published
+test_data/
+.vscode-test/
+*.log
+.DS_Store
