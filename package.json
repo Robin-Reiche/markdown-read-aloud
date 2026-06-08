@@ -147,7 +147,12 @@
         "markdownReadAloud.autoDetectLanguage": {
           "type": "boolean",
           "default": true,
-          "description": "Detect the document language automatically and pick a matching voice."
+          "description": "Detect the document's main language automatically and pick a matching voice."
+        },
+        "markdownReadAloud.perParagraphLanguage": {
+          "type": "boolean",
+          "default": false,
+          "description": "Switch the voice per paragraph to match each paragraph's language (for mixed-language docs). Off by default: one consistent voice is easier to follow. Toggle live in the player."
         },
         "markdownReadAloud.fallbackLanguage": {
           "type": "string",

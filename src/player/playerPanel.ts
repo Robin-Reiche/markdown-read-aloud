@@ -90,7 +90,7 @@ export class PlayerPanel {
     const overrides = cfg.get<Record<string, string>>('voiceOverrides', {});
     this.gender = cfg.get<Gender>('preferredGender', 'female');
     this.engineId = this.resolveEngine(cfg); // re-resolve so a new read retries Edge after a fallback
-    this.autoLang = cfg.get<boolean>('autoDetectLanguage', true);
+    this.autoLang = cfg.get<boolean>('perParagraphLanguage', false);
     this.activeLocale = job.locale;
     this.currentVoice = pickVoice(job.locale, this.gender, overrides);
     const rate = cfg.get<number>('speed', 1);
