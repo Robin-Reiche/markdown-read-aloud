@@ -10,7 +10,10 @@ export function activate(context: vscode.ExtensionContext) {
   reg('markdownReadAloud.readFromCursor', () => readFromCursor(context));
   reg('markdownReadAloud.readSelection', () => readSelection(context));
   reg('markdownReadAloud.stop', () => PlayerPanel.current?.control('stop'));
-  reg('markdownReadAloud.togglePlayPause', () => PlayerPanel.current?.control('playpause'));
+  reg('markdownReadAloud.togglePlayPause', () => {
+    if (PlayerPanel.current) PlayerPanel.current.control('playpause');
+    else vscode.window.showInformationMessage('Read Aloud: no active player. Run "Read Aloud: Read from Cursor" to start.');
+  });
   reg('markdownReadAloud.openPlayer', () => PlayerPanel.show(context.extensionUri));
 }
 

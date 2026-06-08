@@ -1,7 +1,6 @@
 import type { Block, Chunk } from './types';
 
 const MAX_LEN = 240; // target characters per synthesized chunk
-const MIN_LEN = 60; // merge sentences shorter than this with the next
 
 /**
  * Turn speakable blocks into playback chunks (≈ one sentence each), using the
@@ -56,8 +55,8 @@ function splitToSentences(text: string, segmenter: Intl.Segmenter): string[] {
     }
     if (!buf) {
       buf = s;
-    } else if (buf.length < MIN_LEN || buf.length + 1 + s.length <= MAX_LEN) {
-      buf += ' ' + s;
+    } else if (buf.length + 1 + s.length <= MAX_LEN) {
+      buf += ' ' + s; // combine consecutive short sentences up to the target
     } else {
       flush();
       buf = s;
@@ -91,6 +90,12 @@ function hardWrap(s: string, size: number): string[] {
   const out: string[] = [];
   let buf = '';
   for (const w of words) {
+    if (w.length > size) {
+      // a single token longer than the limit (e.g. a huge URL): hard-slice it
+      if (buf) { out.push(buf); buf = ''; }
+      for (let i = 0; i < w.length; i += size) out.push(w.slice(i, i + size));
+      continue;
+    }
     if (buf && buf.length + 1 + w.length > size) {
       out.push(buf);
       buf = w;

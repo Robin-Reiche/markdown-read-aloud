@@ -60,7 +60,7 @@ export function processMarkdown(source: string, opts: ProcessOptions): ProcessRe
       switch (node.type) {
         case 'yaml':
         case 'toml': {
-          const m = String(node.value || '').match(/^(?:lang|language)\s*:\s*["']?([\w-]+)/im);
+          const m = String(node.value || '').match(/^(?:lang|language)\s*[:=]\s*["']?([\w-]+)/im);
           if (m) frontmatterLang = m[1];
           break; // never spoken
         }

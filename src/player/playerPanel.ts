@@ -26,6 +26,10 @@ export class PlayerPanel {
   private currentVoice = '';
   private gender: Gender = 'female';
 
+  private generation = 0; // bumped on new job / voice change to discard stale synths
+  private hadSuccess = false; // have we ever gotten audio from Edge this session?
+  private supertonicWarned = false;
+
   private cache = new Map<number, ArrayBuffer>();
   private inflight = new Map<number, Promise<void>>();
 
@@ -61,7 +65,7 @@ export class PlayerPanel {
     this.extensionUri = extensionUri;
     const cfg = vscode.workspace.getConfiguration('markdownReadAloud');
     this.gender = cfg.get<Gender>('preferredGender', 'female');
-    this.engineId = cfg.get<string>('engine', 'edge') === 'browser' ? 'browser' : 'edge';
+    this.engineId = this.resolveEngine(cfg);
 
     this.panel.webview.html = this.getHtml(this.panel.webview);
     this.panel.iconPath = undefined;
@@ -74,14 +78,19 @@ export class PlayerPanel {
   async startJob(job: ReadJob, startIndex: number) {
     this.job = job;
     this.docUri = vscode.Uri.parse(job.docUri);
+    this.generation++;
+    this.hadSuccess = false;
     this.cache.clear();
     this.inflight.clear();
 
     const cfg = vscode.workspace.getConfiguration('markdownReadAloud');
     const overrides = cfg.get<Record<string, string>>('voiceOverrides', {});
     this.gender = cfg.get<Gender>('preferredGender', 'female');
+    this.engineId = this.resolveEngine(cfg); // re-resolve so a new read retries Edge after a fallback
     this.currentVoice = pickVoice(job.locale, this.gender, overrides);
     const rate = cfg.get<number>('speed', 1);
+
+    if (this.engineId === 'edge') this.engine.setVoice(this.currentVoice).catch(() => {});
 
     this.panel.title = `▶ ${job.title}`;
     this.panel.reveal(vscode.ViewColumn.Beside, true);
@@ -134,29 +143,32 @@ export class PlayerPanel {
   private async provideChunk(index: number) {
     if (!this.job || index < 0 || index >= this.job.chunks.length) return;
     if (this.engineId === 'browser') return; // webview synthesizes locally
-
     if (this.cache.has(index)) {
       this.sendAudio(index, this.cache.get(index)!);
       return;
     }
     if (this.inflight.has(index)) return;
 
+    const gen = this.generation;
     const task = (async () => {
       try {
-        await this.engine.setVoice(this.currentVoice);
         const buf = await this.engine.synth(this.job!.chunks[index].text);
+        if (gen !== this.generation) return; // superseded by a voice change / new job
         const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
+        this.hadSuccess = true;
         this.cache.set(index, ab);
         this.sendAudio(index, ab);
       } catch (err: any) {
-        // First failure: fall back to the browser speech engine for the whole session.
-        if (this.engineId === 'edge') {
+        if (gen !== this.generation) return; // stale error from a superseded synth — ignore
+        if (this.engineId === 'edge' && !this.hadSuccess) {
+          // Never reached the endpoint at all this session → likely offline.
           this.engineId = 'browser';
           vscode.window.showWarningMessage(
-            `Edge-Stimmen nicht erreichbar (${err?.message || err}). Wechsle auf System-Stimmen (offline).`
+            `Read Aloud: Edge voices unreachable (${err?.message || err}). Falling back to system voices (offline).`
           );
           this.post({ type: 'engineFallback', engine: 'browser' });
         } else {
+          // Transient failure mid-document → skip just this sentence.
           this.post({ type: 'audioError', index, message: String(err?.message || err) });
         }
       } finally {
@@ -165,6 +177,18 @@ export class PlayerPanel {
     })();
     this.inflight.set(index, task);
     await task;
+  }
+
+  private resolveEngine(cfg: vscode.WorkspaceConfiguration): 'edge' | 'browser' {
+    const choice = cfg.get<string>('engine', 'edge');
+    if (choice === 'browser') return 'browser';
+    if (choice === 'supertonic' && !this.supertonicWarned) {
+      this.supertonicWarned = true;
+      vscode.window.showInformationMessage(
+        'Read Aloud: the offline Supertonic engine is coming in a later update — using Edge neural voices for now.'
+      );
+    }
+    return 'edge';
   }
 
   private sendAudio(index: number, ab: ArrayBuffer) {
@@ -186,8 +210,10 @@ export class PlayerPanel {
   private async applyVoice(voice: string, gender: Gender) {
     this.currentVoice = voice;
     this.gender = gender;
+    this.generation++; // discard any in-flight old-voice synths
     this.cache.clear();
     this.inflight.clear();
+    if (this.engineId === 'edge') this.engine.setVoice(voice).catch(() => {});
     this.post({ type: 'voiceChanged', currentVoice: voice, gender, name: displayName(voice) });
   }
 
