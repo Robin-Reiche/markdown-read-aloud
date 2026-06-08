@@ -18,10 +18,10 @@ function localeFromVoice(voice: string): string {
  * Microsoft Edge neural TTS via the (free, key-less) read-aloud endpoint.
  * Runs in the Node extension host.
  *
- * IMPORTANT: every operation that touches the shared WebSocket — both `setVoice`
- * (which reconnects) and `synth` — is funneled through a single serial queue, so
- * a reconnect can NEVER tear down the socket while a synthesis is mid-stream.
- * That race previously produced truncated audio and spurious "offline" fallbacks.
+ * Every operation goes through one serial queue, and each `synth` call atomically
+ * (re)connects to the requested voice if needed and then streams — so the player's
+ * concurrent prefetch (and per-paragraph voice switching) can never tear the
+ * WebSocket down mid-synthesis or synthesize a chunk with the wrong voice.
  */
 export class EdgeEngine implements TtsEngine {
   readonly id = 'edge';
@@ -30,21 +30,18 @@ export class EdgeEngine implements TtsEngine {
   private tts: MsEdgeTTS | null = null;
   private voice = '';
   private locale = '';
-  private targetVoice = '';
-  private targetLocale = '';
   private tail: Promise<unknown> = Promise.resolve();
 
-  setVoice(voiceShortName: string, locale?: string): Promise<void> {
-    this.targetVoice = voiceShortName;
-    this.targetLocale = locale || localeFromVoice(voiceShortName);
-    return this.enqueue(async () => {
-      if (this.voice === this.targetVoice && this.locale === this.targetLocale && this.tts) return;
-      await this.connect(this.targetVoice, this.targetLocale);
-    });
+  synth(text: string, voice: string, locale: string): Promise<Buffer> {
+    const loc = locale || localeFromVoice(voice);
+    return this.enqueue(() => this.synthOnce(text, voice, loc, true));
   }
 
-  synth(text: string): Promise<Buffer> {
-    return this.enqueue(() => this.synthOnce(text));
+  warm(voice: string, locale: string): Promise<void> {
+    const loc = locale || localeFromVoice(voice);
+    return this.enqueue(async () => {
+      if (voice !== this.voice || loc !== this.locale || !this.tts) await this.connect(voice, loc);
+    });
   }
 
   /** Serialize all socket-touching work; one operation at a time, FIFO. */
@@ -60,18 +57,18 @@ export class EdgeEngine implements TtsEngine {
   private async connect(voice: string, locale: string): Promise<void> {
     this.closeSocket();
     const tts = new MsEdgeTTS();
-    // voiceLocale sets the SSML xml:lang, which pins the language a multilingual
-    // voice speaks in (so a German doc isn't occasionally read as French, etc.).
     await tts.setMetadata(voice, FORMAT, { voiceLocale: locale });
     this.tts = tts;
     this.voice = voice;
     this.locale = locale;
   }
 
-  private async synthOnce(text: string, retry = true): Promise<Buffer> {
+  private async synthOnce(text: string, voice: string, locale: string, retry: boolean): Promise<Buffer> {
     const escaped = xmlEscape(text);
     if (!escaped.trim()) return Buffer.alloc(0);
-    if (!this.tts) await this.connect(this.targetVoice || this.voice, this.targetLocale || this.locale);
+    if (voice !== this.voice || locale !== this.locale || !this.tts) {
+      await this.connect(voice, locale);
+    }
 
     try {
       const buf = await this.streamToBuffer(escaped);
@@ -79,14 +76,14 @@ export class EdgeEngine implements TtsEngine {
       // bytes (no 'error'). Treat an empty result for real text as a failure and
       // retry once on a fresh connection.
       if (buf.length === 0 && retry) {
-        await this.connect(this.voice, this.locale);
-        return this.synthOnce(text, false);
+        await this.connect(voice, locale);
+        return this.synthOnce(text, voice, locale, false);
       }
       return buf;
     } catch (err) {
       if (retry) {
-        await this.connect(this.voice, this.locale);
-        return this.synthOnce(text, false);
+        await this.connect(voice, locale);
+        return this.synthOnce(text, voice, locale, false);
       }
       throw err;
     }

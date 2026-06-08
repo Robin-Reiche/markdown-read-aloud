@@ -22,3 +22,22 @@ export function detectLocale(source: string, fallbackLocale: string): { locale: 
   }
   return { locale: fallbackLocale, reliable: false };
 }
+
+/**
+ * Detect the locale of a single block of clean prose, but only return one when
+ * the detection is reliable and maps to a supported voice. Short/ambiguous
+ * blocks return undefined so the caller can keep the surrounding language.
+ */
+export function detectReliableLocale(text: string): string | undefined {
+  const sample = text.trim();
+  if (sample.length < 18) return undefined;
+  try {
+    const r = eld.detect(sample);
+    if (r.language && r.isReliable()) {
+      return localeForLang(r.language);
+    }
+  } catch {
+    /* ignore */
+  }
+  return undefined;
+}

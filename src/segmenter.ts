@@ -7,20 +7,28 @@ const MAX_LEN = 240; // target characters per synthesized chunk
  * built-in, locale-aware Intl.Segmenter. Each chunk keeps its block's source
  * range so the editor can highlight while reading.
  */
-export function chunkBlocks(blocks: Block[], locale: string): Chunk[] {
-  const segLocale = locale.split('-')[0] || 'en';
-  let segmenter: Intl.Segmenter | undefined;
-  try {
-    segmenter = new Intl.Segmenter(segLocale, { granularity: 'sentence' });
-  } catch {
-    segmenter = new Intl.Segmenter('en', { granularity: 'sentence' });
-  }
+export function chunkBlocks(blocks: Block[], fallbackLocale: string): Chunk[] {
+  const segCache = new Map<string, Intl.Segmenter>();
+  const segFor = (locale: string): Intl.Segmenter => {
+    const base = locale.split('-')[0] || 'en';
+    let s = segCache.get(base);
+    if (!s) {
+      try {
+        s = new Intl.Segmenter(base, { granularity: 'sentence' });
+      } catch {
+        s = new Intl.Segmenter('en', { granularity: 'sentence' });
+      }
+      segCache.set(base, s);
+    }
+    return s;
+  };
 
   const chunks: Chunk[] = [];
   let index = 0;
 
   for (const b of blocks) {
-    const sentences = splitToSentences(b.text, segmenter);
+    const locale = b.locale || fallbackLocale;
+    const sentences = splitToSentences(b.text, segFor(locale));
     for (const text of sentences) {
       chunks.push({
         index: index++,

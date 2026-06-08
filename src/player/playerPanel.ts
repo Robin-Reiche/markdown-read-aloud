@@ -27,6 +27,7 @@ export class PlayerPanel {
   private currentVoice = '';
   private gender: Gender = 'female';
   private activeLocale = ''; // language the voice picker / gender toggle operate on
+  private autoLang = true; // auto per-paragraph language switching (vs. one fixed voice)
 
   private generation = 0; // bumped on new job / voice change to discard stale synths
   private hadSuccess = false; // have we ever gotten audio from Edge this session?
@@ -89,11 +90,10 @@ export class PlayerPanel {
     const overrides = cfg.get<Record<string, string>>('voiceOverrides', {});
     this.gender = cfg.get<Gender>('preferredGender', 'female');
     this.engineId = this.resolveEngine(cfg); // re-resolve so a new read retries Edge after a fallback
+    this.autoLang = cfg.get<boolean>('autoDetectLanguage', true);
     this.activeLocale = job.locale;
     this.currentVoice = pickVoice(job.locale, this.gender, overrides);
     const rate = cfg.get<number>('speed', 1);
-
-    if (this.engineId === 'edge') this.engine.setVoice(this.currentVoice, this.activeLocale).catch(() => {});
 
     this.panel.title = `▶ ${job.title}`;
     this.panel.reveal(vscode.ViewColumn.Beside, true);
@@ -140,6 +140,9 @@ export class PlayerPanel {
       case 'detectLanguage':
         this.detectLanguage();
         break;
+      case 'setAutoLang':
+        this.setAutoLang(!!m.value);
+        break;
       case 'persistSpeed':
         await vscode.workspace
           .getConfiguration('markdownReadAloud')
@@ -158,9 +161,19 @@ export class PlayerPanel {
     if (this.inflight.has(index)) return;
 
     const gen = this.generation;
+    const chunk = this.job.chunks[index];
+    let voice: string;
+    let loc: string;
+    if (this.autoLang) {
+      loc = chunk.locale || this.job.locale;
+      voice = pickVoice(loc, this.gender, this.overrides());
+    } else {
+      loc = this.activeLocale;
+      voice = this.currentVoice;
+    }
     const task = (async () => {
       try {
-        const buf = await this.engine.synth(this.job!.chunks[index].text);
+        const buf = await this.engine.synth(chunk.text, voice, loc);
         if (gen !== this.generation) return; // superseded by a voice change / new job
         const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
         this.hadSuccess = true;
@@ -207,19 +220,51 @@ export class PlayerPanel {
     return vscode.workspace.getConfiguration('markdownReadAloud').get<Record<string, string>>('voiceOverrides', {});
   }
 
-  /** Switch ♀/♂ within the currently active language. */
+  /** Drop cached audio, invalidate in-flight synths, refresh the UI; the next
+   *  chunk requests pick up the new voice/language/gender state. */
+  private invalidateAndRefresh() {
+    this.generation++;
+    this.cache.clear();
+    this.inflight.clear();
+    this.post({ type: 'voiceUi', ...this.voiceUiPayload() });
+  }
+
+  /** Toggle automatic per-paragraph language switching vs. one fixed voice. */
+  private setAutoLang(on: boolean) {
+    this.autoLang = on;
+    if (on && this.job) {
+      this.activeLocale = this.job.locale;
+      this.currentVoice = pickVoice(this.activeLocale, this.gender, this.overrides());
+    }
+    this.invalidateAndRefresh();
+  }
+
+  /** Switch ♀/♂ — keeps the current mode; the gender applies to every paragraph. */
   private changeGender(gender: Gender) {
-    const voice = pickVoice(this.activeLocale, gender, this.overrides());
-    this.setActiveVoice(voice, gender, this.activeLocale);
+    this.gender = gender;
+    if (!this.autoLang) this.currentVoice = pickVoice(this.activeLocale, gender, this.overrides());
+    this.invalidateAndRefresh();
   }
 
-  /** Switch to another language: pick that language's curated voice for the current gender. */
+  /** Manually choose a language (turns OFF auto per-paragraph). */
   private changeLocale(locale: string) {
-    const voice = pickVoice(locale, this.gender, this.overrides());
-    this.setActiveVoice(voice, this.gender, locale);
+    this.autoLang = false;
+    this.activeLocale = locale;
+    this.currentVoice = pickVoice(locale, this.gender, this.overrides());
+    this.invalidateAndRefresh();
   }
 
-  /** Re-detect the document language from its text and switch to it. */
+  /** Manually choose a specific voice (turns OFF auto per-paragraph). */
+  private changeVoice(shortName: string) {
+    const v = getVoice(shortName);
+    this.autoLang = false;
+    this.gender = v && v.gender.toLowerCase() === 'male' ? 'male' : 'female';
+    this.activeLocale = v ? v.locale : this.activeLocale;
+    this.currentVoice = shortName;
+    this.invalidateAndRefresh();
+  }
+
+  /** (Manual mode) detect the document's dominant language and switch to it. */
   private detectLanguage() {
     if (!this.job) return;
     const fallback = vscode.workspace.getConfiguration('markdownReadAloud').get<string>('fallbackLanguage', 'en-US');
@@ -229,31 +274,14 @@ export class PlayerPanel {
     vscode.window.setStatusBarMessage(`Read Aloud: detected ${localeDisplay(det.locale)}`, 3000);
   }
 
-  /** Pick a specific voice (from the full voice dropdown). */
-  private changeVoice(shortName: string) {
-    const v = getVoice(shortName);
-    const gender: Gender = v && v.gender.toLowerCase() === 'male' ? 'male' : 'female';
-    const locale = v ? v.locale : this.activeLocale;
-    this.setActiveVoice(shortName, gender, locale);
-  }
-
-  private setActiveVoice(voice: string, gender: Gender, locale: string) {
-    this.currentVoice = voice;
-    this.gender = gender;
-    this.activeLocale = locale;
-    this.generation++; // discard any in-flight old-voice synths
-    this.cache.clear();
-    this.inflight.clear();
-    if (this.engineId === 'edge') this.engine.setVoice(voice, locale).catch(() => {});
-    this.post({ type: 'voiceUi', ...this.voiceUiPayload() });
-  }
-
-  /** Everything the webview needs to render the voice/language controls for the active locale. */
+  /** Everything the webview needs to render the voice/language controls. */
   private voiceUiPayload() {
     const pair = curatedPair(this.activeLocale);
     return {
+      autoLang: this.autoLang,
       locale: this.activeLocale,
       localeName: localeDisplay(this.activeLocale),
+      languages: this.job ? this.job.languages.map((l) => ({ locale: l, name: localeDisplay(l) })) : [],
       voicePair: {
         female: pair.female ? { shortName: pair.female, name: displayName(pair.female) } : undefined,
         male: pair.male ? { shortName: pair.male, name: displayName(pair.male) } : undefined,
@@ -369,6 +397,7 @@ export class PlayerPanel {
     <details id="advanced">
       <summary>Language &amp; all voices</summary>
       <div class="advanced-body">
+        <label class="check"><input type="checkbox" id="auto-lang" /> Auto language (per paragraph)</label>
         <label class="adv-label" for="lang-select">Language</label>
         <div class="lang-row">
           <select id="lang-select"></select>

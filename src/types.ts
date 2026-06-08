@@ -10,6 +10,8 @@ export interface Block {
   startOffset: number;
   endOffset: number;
   headingLevel?: number;
+  /** per-block detected locale (for per-paragraph language switching) */
+  locale?: string;
 }
 
 /** One unit of synthesis/playback (usually a sentence). Carries its block's range. */
@@ -33,7 +35,10 @@ export interface OutlineItem {
 export interface ReadJob {
   docUri: string;
   title: string;
+  /** dominant document locale */
   locale: string;
+  /** distinct locales present across chunks (for per-paragraph mode) */
+  languages: string[];
   chunks: Chunk[];
   outline: OutlineItem[];
 }
@@ -43,12 +48,12 @@ export interface TtsEngine {
   readonly id: string;
   readonly mime: string;
   /**
-   * Set (and connect) the active voice and the language to speak in.
-   * The locale pins pronunciation (xml:lang) — important for multilingual voices.
-   * Cheap no-op if unchanged.
+   * Synthesize text with a specific voice and language to an audio buffer.
+   * Atomic per call (voice switch + synthesis), so it is safe under the
+   * concurrent prefetch requests the player makes.
    */
-  setVoice(voiceShortName: string, locale?: string): Promise<void>;
-  /** Synthesize text to an audio buffer in `mime` format. */
-  synth(text: string): Promise<Buffer>;
+  synth(text: string, voice: string, locale: string): Promise<Buffer>;
+  /** Optionally pre-connect a voice/locale to cut first-play latency. */
+  warm(voice: string, locale: string): Promise<void>;
   dispose(): void;
 }

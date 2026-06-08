@@ -51,6 +51,7 @@
     renderGender();
     renderLangSelect();
     renderVoiceSelect();
+    applyAutoUi();
     renderOutline();
     renderTranscript();
 
@@ -239,8 +240,10 @@
   function onVoiceUi(m) {
     clearAudioCache();
     if (job) {
+      job.autoLang = m.autoLang;
       job.locale = m.locale;
       job.localeName = m.localeName;
+      job.languages = m.languages;
       job.voicePair = m.voicePair;
       job.allVoices = m.allVoices;
       job.currentVoice = m.currentVoice;
@@ -249,6 +252,7 @@
     renderHeader();
     renderGender();
     renderVoiceSelect();
+    applyAutoUi();
     if ($('lang-select')) $('lang-select').value = m.locale;
     if (engine === 'browser') initSynthVoices();
     if (playing && engine === 'edge') { audio.pause(); playAt(cursor); }
@@ -318,8 +322,25 @@
   function renderHeader() {
     if (!job) return;
     const est = estLabel();
+    let langPart;
+    if (job.autoLang) {
+      const names = (job.languages || []).map((l) => l.name);
+      langPart = names.length > 1 ? 'Auto: ' + names.join(', ') : (names[0] || job.localeName);
+    } else {
+      langPart = job.localeName;
+    }
     $('lang').textContent =
-      job.localeName + ' · ' + job.chunks.length + ' sentences' + (est ? ' · ' + est : '');
+      langPart + ' · ' + job.chunks.length + ' sentences' + (est ? ' · ' + est : '');
+  }
+
+  // In auto mode the language/voice pickers are informational (disabled); the
+  // gender toggle still applies. In manual mode they drive a single fixed voice.
+  function applyAutoUi() {
+    const on = !!(job && job.autoLang);
+    if ($('auto-lang')) $('auto-lang').checked = on;
+    if ($('lang-select')) $('lang-select').disabled = on;
+    if ($('voice-select')) $('voice-select').disabled = on;
+    if ($('detect-lang')) $('detect-lang').disabled = on;
   }
 
   function renderOutline() {
@@ -398,6 +419,8 @@
   });
 
   $('detect-lang').addEventListener('click', () => post({ type: 'detectLanguage' }));
+
+  $('auto-lang').addEventListener('change', (e) => post({ type: 'setAutoLang', value: e.target.checked }));
 
   function onControl(action) {
     if (action === 'playpause') togglePlay();

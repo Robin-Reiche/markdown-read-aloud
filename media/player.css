@@ -136,6 +136,10 @@ input[type='range']::-webkit-slider-thumb:hover { transform: scale(1.15); }
 #advanced[open] summary::before { content: '▾ '; }
 .advanced-body { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
 .adv-label { font-size: 0.78em; color: var(--dim); margin-top: 6px; }
+.check { display: flex; align-items: center; gap: 7px; font-size: 0.9em; cursor: pointer; user-select: none; }
+.check input { accent-color: var(--accent); width: 15px; height: 15px; }
+#lang-select:disabled, #voice-select:disabled, .detect-btn:disabled { opacity: 0.45; cursor: default; }
+.detect-btn:disabled:hover { background: transparent; color: var(--accent); }
 .lang-row { display: flex; gap: 6px; align-items: stretch; }
 .lang-row #lang-select { flex: 1; }
 .detect-btn {

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { processMarkdown } from './markdown/processor';
 import { chunkBlocks } from './segmenter';
-import { detectLocale } from './languageDetector';
+import { detectLocale, detectReliableLocale } from './languageDetector';
 import { localeForLang } from './voices';
 import type { OutlineItem, ReadJob } from './types';
 
@@ -42,7 +42,19 @@ export function buildJob(opts: BuildOptions): ReadJob | undefined {
 
   if (!res.blocks.length) return undefined;
 
-  // 4) shift offsets to absolute document positions and chunk into sentences
+  // 4) per-paragraph language: each block that reliably detects as a supported
+  // language gets its own locale; short/ambiguous blocks inherit the previous one.
+  if (autoDetect) {
+    let last = locale;
+    for (const b of res.blocks) {
+      b.locale = detectReliableLocale(b.text) || last;
+      last = b.locale;
+    }
+  } else {
+    for (const b of res.blocks) b.locale = locale;
+  }
+
+  // 5) shift offsets to absolute document positions and chunk into sentences
   if (opts.baseOffset) {
     for (const b of res.blocks) {
       b.startOffset += opts.baseOffset;
@@ -51,6 +63,8 @@ export function buildJob(opts: BuildOptions): ReadJob | undefined {
   }
   const chunks = chunkBlocks(res.blocks, locale);
   if (!chunks.length) return undefined;
+
+  const languages = [...new Set(chunks.map((c) => c.locale))];
 
   const outline: OutlineItem[] = chunks
     .filter((c) => c.kind === 'heading')
@@ -64,6 +78,7 @@ export function buildJob(opts: BuildOptions): ReadJob | undefined {
     docUri: opts.docUri.toString(),
     title: opts.title,
     locale,
+    languages,
     chunks,
     outline,
   };
