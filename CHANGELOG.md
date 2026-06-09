@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2 — 2026-06-09
+
+- Added an animated demo (the player reading with live sentence highlighting) to the README and Marketplace listing.
+
 ## 1.0.1 — 2026-06-09
 
 Marketplace listing polish — no functional changes.

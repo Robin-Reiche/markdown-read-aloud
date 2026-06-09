@@ -10,6 +10,7 @@ media/_concepts/**
 media/icon.svg
 media/icon-alt-ink.svg
 media/social-preview.png
+media/preview_gif.gif
 CONTRIBUTING.md
 *.vsix
 node_modules/**

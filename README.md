@@ -14,10 +14,7 @@ Built for the age of AI-generated docs, when you have more Markdown to get throu
 than time to read it: skim long READMEs, specs and ADRs by ear, or **proofread your
 own writing by listening** to it.
 
-<!-- TODO: add media/demo.gif (a short screen capture of the player reading + sentence highlight), then re-enable the line below.
-![Markdown Read Aloud — the player reading a document aloud beside the editor, with the current sentence highlighted](media/demo.gif)
--->
-![Markdown Read Aloud](media/social-preview.png)
+![Markdown Read Aloud — the player reading a Markdown document aloud beside the editor, with the current sentence highlighted](media/preview_gif.gif)
 
 ## Free neural voices, no API key
 
