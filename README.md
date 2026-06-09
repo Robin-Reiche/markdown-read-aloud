@@ -1,9 +1,6 @@
-<!-- Marketplace badges render only once the extension is live on the Marketplace.
-     Re-enable them (delete these two comment markers) right after your first `vsce publish`:
 [![Version](https://img.shields.io/visual-studio-marketplace/v/RobinReiche.markdown-read-aloud?label=Marketplace&color=0C9488)](https://marketplace.visualstudio.com/items?itemName=RobinReiche.markdown-read-aloud)
 [![Installs](https://img.shields.io/visual-studio-marketplace/i/RobinReiche.markdown-read-aloud?color=0C9488)](https://marketplace.visualstudio.com/items?itemName=RobinReiche.markdown-read-aloud)
 [![Rating](https://img.shields.io/visual-studio-marketplace/r/RobinReiche.markdown-read-aloud?color=0C9488)](https://marketplace.visualstudio.com/items?itemName=RobinReiche.markdown-read-aloud&ssr=false#review-details)
--->
 [![CI](https://github.com/Robin-Reiche/markdown-read-aloud/actions/workflows/ci.yml/badge.svg)](https://github.com/Robin-Reiche/markdown-read-aloud/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0C9488.svg)](LICENSE)
 
