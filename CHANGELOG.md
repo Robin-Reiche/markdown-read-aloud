@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 — 2026-06-09
+
+Marketplace listing polish — no functional changes.
+
+- New README banner (social-preview card) and re-enabled Marketplace badges.
+- Added GitHub Sponsors + Ko-fi support links.
+
 ## 1.0.0 — 2026-06-09
 
 Initial release.
