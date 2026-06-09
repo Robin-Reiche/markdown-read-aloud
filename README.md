@@ -20,7 +20,7 @@ own writing by listening** to it.
 <!-- TODO: add media/demo.gif (a short screen capture of the player reading + sentence highlight), then re-enable the line below.
 ![Markdown Read Aloud — the player reading a document aloud beside the editor, with the current sentence highlighted](media/demo.gif)
 -->
-![Markdown Read Aloud](media/icon.png)
+![Markdown Read Aloud](media/social-preview.png)
 
 ## Free neural voices, no API key
 
