@@ -111,6 +111,13 @@ unofficial for third-party use and could change. If it becomes unavailable, the
 extension automatically falls back to your system voices. For a fully offline,
 no-network experience, an on-device engine (Supertonic) is planned.
 
+## ❤️ Support This Project
+
+If Markdown Read Aloud saves you time, you can support its continued development — completely optional, always appreciated:
+
+[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub-EA4AAA?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Robin-Reiche)
+[![Ko-fi](https://img.shields.io/badge/Buy%20me%20a%20coffee-Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/robinreiche)
+
 ## License
 
 MIT © Robin Reiche. See [LICENSE](LICENSE).
