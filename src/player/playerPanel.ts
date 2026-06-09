@@ -30,6 +30,7 @@ export class PlayerPanel {
   private autoLang = true; // auto per-paragraph language switching (vs. one fixed voice)
 
   private generation = 0; // bumped on new job / voice change to discard stale synths
+  private playingIndex = 0; // last sentence the webview reported playing (for warm pre-synth)
   private hadSuccess = false; // have we ever gotten audio from Edge this session?
   private supertonicWarned = false;
 
@@ -94,6 +95,7 @@ export class PlayerPanel {
     this.activeLocale = job.locale;
     this.currentVoice = pickVoice(job.locale, this.gender, overrides);
     const rate = cfg.get<number>('speed', 1);
+    const volume = cfg.get<number>('volume', 1);
 
     this.panel.title = `▶ ${job.title}`;
     this.panel.reveal(vscode.ViewColumn.Beside, true);
@@ -102,6 +104,8 @@ export class PlayerPanel {
       startIndex,
       engine: this.engineId,
       rate,
+      volume,
+      flagsBase: this.panel.webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'flags')).toString(),
       job: this.serializeJob(job),
     });
   }
@@ -122,6 +126,7 @@ export class PlayerPanel {
         await this.provideChunk(m.index);
         break;
       case 'nowPlaying':
+        this.playingIndex = m.index;
         this.highlight(m.index);
         break;
       case 'ended':
@@ -147,6 +152,11 @@ export class PlayerPanel {
         await vscode.workspace
           .getConfiguration('markdownReadAloud')
           .update('speed', m.value, vscode.ConfigurationTarget.Global);
+        break;
+      case 'persistVolume':
+        await vscode.workspace
+          .getConfiguration('markdownReadAloud')
+          .update('volume', m.value, vscode.ConfigurationTarget.Global);
         break;
     }
   }
@@ -227,6 +237,14 @@ export class PlayerPanel {
     this.cache.clear();
     this.inflight.clear();
     this.post({ type: 'voiceUi', ...this.voiceUiPayload() });
+    // Warm the connection and pre-synthesize the current sentence (and the next)
+    // for the new voice right now, in parallel with the webview round-trip, so
+    // playback resumes with minimal delay instead of starting a cold synth only
+    // after the webview asks for the chunk.
+    if (this.engineId === 'edge' && this.job) {
+      void this.provideChunk(this.playingIndex);
+      void this.provideChunk(this.playingIndex + 1);
+    }
   }
 
   /** Toggle automatic per-paragraph language switching vs. one fixed voice. */
@@ -236,6 +254,9 @@ export class PlayerPanel {
       this.activeLocale = this.job.locale;
       this.currentVoice = pickVoice(this.activeLocale, this.gender, this.overrides());
     }
+    void vscode.workspace
+      .getConfiguration('markdownReadAloud')
+      .update('perParagraphLanguage', on, vscode.ConfigurationTarget.Global);
     this.invalidateAndRefresh();
   }
 
@@ -243,6 +264,9 @@ export class PlayerPanel {
   private changeGender(gender: Gender) {
     this.gender = gender;
     if (!this.autoLang) this.currentVoice = pickVoice(this.activeLocale, gender, this.overrides());
+    void vscode.workspace
+      .getConfiguration('markdownReadAloud')
+      .update('preferredGender', gender, vscode.ConfigurationTarget.Global);
     this.invalidateAndRefresh();
   }
 
@@ -369,46 +393,67 @@ export class PlayerPanel {
       <div id="lang"></div>
     </div>
 
-    <div id="transcript" aria-live="polite"></div>
+    <section class="panel" id="panel-screen">
+      <div id="transcript"><div id="lines"></div></div>
+    </section>
+    <div id="sr" class="sr-only" aria-live="polite"></div>
 
-    <div id="progress">
-      <input id="scrub" type="range" min="0" max="1000" value="0" step="1" aria-label="Seek" />
-      <div id="times"><span id="time-cur">0:00</span><span id="time-total">0:00</span></div>
-    </div>
-
-    <div id="transport">
-      <button id="prev" class="ghost" title="Previous sentence">⏮</button>
-      <button id="play" class="play" title="Play / Pause">▶</button>
-      <button id="stop" class="ghost" title="Stop">⏹</button>
-      <button id="next" class="ghost" title="Next sentence">⏭</button>
-    </div>
-
-    <div id="meta">
-      <div id="gender-toggle" class="pill">
-        <button data-gender="female" id="g-female">♀ <span id="g-female-name">Female</span></button>
-        <button data-gender="male" id="g-male">♂ <span id="g-male-name">Male</span></button>
+    <section class="panel" id="panel-transport">
+      <div id="progress">
+        <input id="scrub" type="range" min="0" max="1000" value="0" step="1" aria-label="Seek" />
+        <div id="times"><span id="time-cur">0:00</span><span id="time-total">0:00</span></div>
       </div>
-      <div id="speedwrap">
+
+      <div id="transport">
+        <button id="prev" class="ghost" title="Previous sentence" aria-label="Previous sentence"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5v14h2V5H6zm3 7l9 7V5l-9 7z"/></svg></button>
+        <div class="key-well"><button id="play" class="key" aria-pressed="false" aria-label="Play"><span class="glyph"><svg class="tri" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><svg class="bars" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></span></button></div>
+        <button id="stop" class="ghost" title="Stop" aria-label="Stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></button>
+        <button id="next" class="ghost" title="Next sentence" aria-label="Next sentence"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5v14h2V5h-2zM15 12L6 5v14l9-7z"/></svg></button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-settings">
+      <div id="meta">
+        <div id="gender-toggle" class="pill">
+          <button data-gender="female" id="g-female">♀ <span id="g-female-name">Female</span></button>
+          <button data-gender="male" id="g-male">♂ <span id="g-male-name">Male</span></button>
+        </div>
+      </div>
+
+      <div id="speedwrap" class="sliderrow">
+        <button id="speed-down" class="spd-btn" title="Slower" aria-label="Slower"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="11" width="14" height="2" rx="1"/></svg></button>
         <input id="speed" type="range" min="0.5" max="2.5" value="1" step="0.05" aria-label="Speed" />
         <span id="speed-val">1.0×</span>
+        <button id="speed-up" class="spd-btn" title="Faster" aria-label="Faster"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg></button>
       </div>
-    </div>
 
-    <details id="advanced">
-      <summary>Language &amp; all voices</summary>
-      <div class="advanced-body">
-        <label class="check"><input type="checkbox" id="auto-lang" /> Auto language (per paragraph)</label>
-        <label class="adv-label" for="lang-select">Language</label>
-        <div class="lang-row">
-          <select id="lang-select"></select>
-          <button id="detect-lang" class="detect-btn" title="Detect the document's language and switch to it">⤿ Detect</button>
+      <div id="volrow" class="sliderrow">
+        <button id="mute" class="vol-btn" title="Mute" aria-label="Mute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path class="spk" d="M4 9.5v5h3.5L12 18V6L7.5 9.5H4z" fill="currentColor" stroke="none"/><path class="wave wave1" d="M15.5 9.8a3.3 3.3 0 010 4.4"/><path class="wave wave2" d="M18 7.4a6.5 6.5 0 010 9.2"/><path class="slash" d="M3.5 3.5l17 17"/></svg></button>
+        <input id="volume" type="range" min="0" max="1" step="0.01" value="1" aria-label="Volume" />
+        <span id="vol-val">100%</span>
+      </div>
+
+      <details id="advanced">
+        <summary>Language &amp; all voices</summary>
+        <div class="advanced-body">
+          <label class="check"><input type="checkbox" id="auto-lang" /> Auto language (per paragraph)</label>
+          <label class="adv-label" for="lang-button">Language</label>
+          <div class="lang-row">
+            <div class="lang-combo" id="lang-combo">
+              <button type="button" id="lang-button" class="lang-button" aria-haspopup="listbox" aria-expanded="false" aria-label="Language"><span class="lang-flag" id="lang-button-flag"></span><span class="lang-label" id="lang-button-label">Auto</span><svg class="lang-caret" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg></button>
+              <ul class="lang-list" id="lang-list" role="listbox" tabindex="-1" hidden></ul>
+            </div>
+            <button id="detect-lang" class="detect-btn" title="Detect the document's language and switch to it">⤿ Detect</button>
+          </div>
+          <label class="adv-label" for="voice-select">Voice</label>
+          <select id="voice-select"></select>
         </div>
-        <label class="adv-label" for="voice-select">Voice</label>
-        <select id="voice-select"></select>
-      </div>
-    </details>
+      </details>
+    </section>
 
-    <div id="outline"></div>
+    <section class="panel" id="outline-panel">
+      <div id="outline"></div>
+    </section>
   </div>
   <script nonce="${n}" src="${js}"></script>
 </body>

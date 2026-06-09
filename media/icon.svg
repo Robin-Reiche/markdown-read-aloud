@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Markdown Read Aloud">
+  <title>Markdown Read Aloud</title>
+  <!-- teal drench: color is the voice -->
+  <rect width="256" height="256" rx="56" fill="#0C9488"/>
+  <!-- official Markdown M, knocked out in near-white -->
+  <path d="M34,156.6 L34,99.4 L50.8,99.4 L67.6,120.4 L84.4,99.4 L101.2,99.4 L101.2,156.6 L84.4,156.6 L84.4,123.8 L67.6,144.8 L50.8,123.8 L50.8,156.6 Z" fill="#F2FBF9"/>
+  <!-- official Markdown down-arrow -->
+  <path d="M137.3,156.6 L112.1,128.8 L128.9,128.8 L128.9,99.4 L145.7,99.4 L145.7,128.8 L162.5,128.8 Z" fill="#F2FBF9"/>
+  <!-- read aloud: speaker arcs -->
+  <g fill="none" stroke="#F2FBF9" stroke-width="14" stroke-linecap="round">
+    <path d="M181.5,111.6 A20,20 0 0 1 181.5,144.4"/>
+    <path d="M191.8,96.9 A38,38 0 0 1 191.8,159.1"/>
+    <path d="M202.1,82.1 A56,56 0 0 1 202.1,173.9"/>
+  </g>
+</svg>

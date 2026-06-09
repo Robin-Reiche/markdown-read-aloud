@@ -9,3 +9,11 @@ test_data/
 *.log
 .DS_Store
 ui-mockups/
+# concept art / scratch — not for the public repo
+media/_concepts/
+# generated from the flag-icons dep by scripts/copy-flags.mjs (run on prepublish)
+media/flags/
+# scratch icon-render previews + temp render scripts (not for the public repo)
+scripts/out-*.png
+scripts/icon-preview.svg
+_render_tmp.js

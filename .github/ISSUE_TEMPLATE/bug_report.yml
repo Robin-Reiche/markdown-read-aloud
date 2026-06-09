@@ -1,0 +1,53 @@
+name: Bug report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to file a bug! Please fill out the fields below.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, and what you expected instead.
+      placeholder: When I run "Read from Cursor" on a German file, it...
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps. A small sample Markdown snippet helps a lot.
+      placeholder: |
+        1. Open this .md ...
+        2. Run command ...
+        3. See ...
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Extension version, VS Code version, and OS.
+      placeholder: "Markdown Read Aloud 0.1.0 · VS Code 1.90 · Windows 11"
+    validations:
+      required: true
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Engine
+      description: Which TTS engine were you using? (markdownReadAloud.engine)
+      options:
+        - edge (default)
+        - browser
+        - supertonic
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / errors
+      description: Any output from the "Markdown Read Aloud" output channel or the Developer Tools console.
+      render: shell
+    validations:
+      required: false

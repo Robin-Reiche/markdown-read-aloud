@@ -1,34 +1,62 @@
 {
   "name": "markdown-read-aloud",
-  "displayName": "Markdown Read Aloud",
-  "description": "Read Markdown files aloud with high-quality, free neural voices. Auto language detection, speed & start-point control, curated male/female voices.",
-  "version": "0.1.0",
-  "publisher": "robinreiche",
+  "displayName": "Markdown Read Aloud — Free Neural Text-to-Speech",
+  "description": "Read Markdown files aloud with free, high-quality neural voices — no API key, no sign-up. Text-to-speech (TTS) with automatic language detection across 75 languages, live 0.5×–2.5× speed, read from cursor/selection/heading, and sentence highlighting. Great for proofreading and listening to docs and READMEs.",
+  "version": "1.0.0",
+  "publisher": "RobinReiche",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/robinreiche/markdown-read-aloud"
+    "url": "https://github.com/Robin-Reiche/markdown-read-aloud"
   },
+  "bugs": {
+    "url": "https://github.com/Robin-Reiche/markdown-read-aloud/issues"
+  },
+  "homepage": "https://github.com/Robin-Reiche/markdown-read-aloud#readme",
+  "qna": "marketplace",
   "engines": {
     "vscode": "^1.90.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Education"
   ],
   "keywords": [
     "markdown",
-    "tts",
-    "text-to-speech",
     "read aloud",
+    "text to speech",
+    "tts",
+    "neural voices",
     "accessibility",
     "voice",
+    "narrator",
+    "listen to documentation",
+    "proofread",
     "speech",
-    "neural"
+    "edge tts",
+    "language detection",
+    "multilingual",
+    "markdown reader",
+    "readme",
+    "screen reader",
+    "dyslexia",
+    "audio",
+    "speech synthesis",
+    "natural voice",
+    "a11y",
+    "pronunciation",
+    "listen",
+    "markdown to speech",
+    "read markdown",
+    "text-to-speech",
+    "speak",
+    "aloud",
+    "document reader"
   ],
   "main": "./dist/extension.js",
   "icon": "media/icon.png",
   "galleryBanner": {
-    "color": "#2563eb",
+    "color": "#0B1413",
     "theme": "dark"
   },
   "activationEvents": [
@@ -144,6 +172,13 @@
           "maximum": 2.5,
           "description": "Default playback speed (0.5×–2.5×). Adjustable live in the player."
         },
+        "markdownReadAloud.volume": {
+          "type": "number",
+          "default": 1,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Default playback volume (0–1). Adjustable live in the player."
+        },
         "markdownReadAloud.autoDetectLanguage": {
           "type": "boolean",
           "default": true,
@@ -205,7 +240,7 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run build",
+    "vscode:prepublish": "npm run build && node scripts/copy-flags.mjs",
     "build": "node esbuild.js --production",
     "watch": "node esbuild.js --watch",
     "typecheck": "tsc --noEmit",
@@ -225,6 +260,9 @@
     "@types/vscode": "^1.90.0",
     "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.24.0",
+    "flag-icons": "^7.5.0",
+    "pngjs": "^7.0.0",
+    "svgo": "^4.0.1",
     "typescript": "^5.5.0"
   }
 }

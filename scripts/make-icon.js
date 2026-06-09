@@ -1,128 +1,85 @@
-// Generates media/icon.png (256x256) — a speaker + sound waves on a blue/purple
-// rounded square. Hand-rolled PNG encoder (no image deps).
+// Regenerates media/icon.png (256x256 RGBA) from media/icon.svg — the icon source
+// of truth ("teal drench": Markdown M + down-arrow + speaker arcs on a teal squircle).
+// package.json "icon" must be a PNG (VS Code disallows SVG there), so this renders the
+// SVG to PNG with headless Google Chrome, then downscales 2x for crisp edges.
+//
+// Run: node scripts/make-icon.js   (needs Google Chrome; set CHROME_PATH to override)
+//
+// Render gotcha (documented): a plain --window-size=256,256 screenshot clips the bottom
+// of the squircle in headless Chrome. Fix: render into a TALLER window and crop the top.
 const fs = require('fs');
 const path = require('path');
-const zlib = require('zlib');
+const os = require('os');
+const { execFileSync } = require('child_process');
+const { PNG } = require('pngjs');
 
-const S = 256;
-const buf = Buffer.alloc(S * S * 4); // RGBA
+const SIZE = 256;       // final icon size
+const SCALE = 2;        // supersample factor for crisp edges
+const PAD_BOTTOM = 120; // extra viewport height (CSS px) so Chrome can't clip the squircle's bottom
 
-function set(x, y, r, g, b, a = 255) {
-  if (x < 0 || y < 0 || x >= S || y >= S) return;
-  const i = (y * S + x) * 4;
-  // simple alpha-over onto existing
-  const ea = buf[i + 3] / 255;
-  const na = a / 255;
-  const out = na + ea * (1 - na);
-  if (out === 0) return;
-  buf[i] = Math.round((r * na + buf[i] * ea * (1 - na)) / out);
-  buf[i + 1] = Math.round((g * na + buf[i + 1] * ea * (1 - na)) / out);
-  buf[i + 2] = Math.round((b * na + buf[i + 2] * ea * (1 - na)) / out);
-  buf[i + 3] = Math.round(out * 255);
-}
+const root = path.join(__dirname, '..');
+const svgPath = path.join(root, 'media', 'icon.svg');
+const outPath = path.join(root, 'media', 'icon.png');
 
-const lerp = (a, b, t) => a + (b - a) * t;
-const inRoundedRect = (x, y, pad, radius) => {
-  const lo = pad, hi = S - 1 - pad;
-  if (x < lo || x > hi || y < lo || y > hi) return false;
-  const cx = Math.min(Math.max(x, lo + radius), hi - radius);
-  const cy = Math.min(Math.max(y, lo + radius), hi - radius);
-  const dx = x - cx, dy = y - cy;
-  return dx * dx + dy * dy <= radius * radius || x >= lo + radius || x <= hi - radius || y >= lo + radius || y <= hi - radius
-    ? (Math.hypot(x - cx, y - cy) <= radius || (x > lo + radius && x < hi - radius) || (y > lo + radius && y < hi - radius))
-    : false;
-};
-
-// Background: rounded square with vertical gradient (#7c3aed -> #2563eb)
-const top = [124, 58, 237], bot = [37, 99, 235];
-for (let y = 0; y < S; y++) {
-  const t = y / (S - 1);
-  const r = Math.round(lerp(top[0], bot[0], t));
-  const g = Math.round(lerp(top[1], bot[1], t));
-  const b = Math.round(lerp(top[2], bot[2], t));
-  for (let x = 0; x < S; x++) {
-    if (inRoundedRect(x, y, 8, 52)) set(x, y, r, g, b, 255);
+function findChrome() {
+  if (process.env.CHROME_PATH) return process.env.CHROME_PATH;
+  const candidates = ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'];
+  for (const c of candidates) {
+    try { execFileSync('command', ['-v', c], { stdio: 'ignore', shell: true }); return c; } catch {}
   }
+  throw new Error('Google Chrome / Chromium not found. Set CHROME_PATH=/path/to/chrome');
 }
 
-// Speaker body (rect) + cone (triangle), white
-function fillRect(x0, y0, x1, y1, c) {
-  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, ...c);
-}
-function fillTri(p0, p1, p2, c) {
-  const minX = Math.floor(Math.min(p0[0], p1[0], p2[0]));
-  const maxX = Math.ceil(Math.max(p0[0], p1[0], p2[0]));
-  const minY = Math.floor(Math.min(p0[1], p1[1], p2[1]));
-  const maxY = Math.ceil(Math.max(p0[1], p1[1], p2[1]));
-  const sign = (a, b, p) => (p[0] - b[0]) * (a[1] - b[1]) - (a[0] - b[0]) * (p[1] - b[1]);
-  for (let y = minY; y <= maxY; y++) {
-    for (let x = minX; x <= maxX; x++) {
-      const p = [x + 0.5, y + 0.5];
-      const d1 = sign(p0, p1, p), d2 = sign(p1, p2, p), d3 = sign(p2, p0, p);
-      const neg = d1 < 0 || d2 < 0 || d3 < 0;
-      const pos = d1 > 0 || d2 > 0 || d3 > 0;
-      if (!(neg && pos)) set(x, y, ...c);
+const svg = fs.readFileSync(svgPath, 'utf8');
+const html = `<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0;background:transparent}
+  svg{display:block;width:${SIZE}px;height:${SIZE}px}
+</style></head><body>${svg}</body></html>`;
+
+const tmpHtml = path.join(os.tmpdir(), 'mra-icon-wrap.html');
+const tmpPng = path.join(os.tmpdir(), 'mra-icon-raw.png');
+fs.writeFileSync(tmpHtml, html);
+
+const chrome = findChrome();
+execFileSync(chrome, [
+  '--headless=new', '--disable-gpu', '--no-sandbox', '--hide-scrollbars',
+  `--force-device-scale-factor=${SCALE}`,
+  `--window-size=${SIZE},${SIZE + PAD_BOTTOM}`,
+  '--default-background-color=00000000',
+  `--screenshot=${tmpPng}`,
+  tmpHtml,
+], { stdio: 'ignore' });
+
+// Crop the top SIZE*SCALE square, then alpha-correct 2x box-downscale to SIZE.
+const raw = PNG.sync.read(fs.readFileSync(tmpPng));
+const big = SIZE * SCALE;
+const out = new PNG({ width: SIZE, height: SIZE });
+for (let y = 0; y < SIZE; y++) {
+  for (let x = 0; x < SIZE; x++) {
+    let r = 0, g = 0, b = 0, a = 0;
+    for (let dy = 0; dy < SCALE; dy++) {
+      for (let dx = 0; dx < SCALE; dx++) {
+        const sx = x * SCALE + dx, sy = y * SCALE + dy;
+        const i = (sy * raw.width + sx) * 4;
+        const sa = raw.data[i + 3] / 255;
+        r += raw.data[i] * sa; g += raw.data[i + 1] * sa; b += raw.data[i + 2] * sa;
+        a += sa;
+      }
     }
+    const o = (y * SIZE + x) * 4;
+    const n = SCALE * SCALE;
+    out.data[o] = a ? Math.round(r / a) : 0;        // un-premultiply
+    out.data[o + 1] = a ? Math.round(g / a) : 0;
+    out.data[o + 2] = a ? Math.round(b / a) : 0;
+    out.data[o + 3] = Math.round((a / n) * 255);
   }
 }
-const WHITE = [255, 255, 255];
-fillRect(74, 110, 104, 146, WHITE);
-fillTri([104, 92], [104, 164], [150, 200], WHITE);
-fillTri([104, 92], [150, 56], [150, 200], WHITE);
 
-// Sound waves: two arcs to the right
-function arc(cx, cy, radius, thick, a0, a1, c) {
-  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
-    const dx = x - cx, dy = y - cy;
-    const rr = Math.hypot(dx, dy);
-    if (Math.abs(rr - radius) > thick / 2) continue;
-    let ang = Math.atan2(dy, dx) * 180 / Math.PI;
-    if (ang >= a0 && ang <= a1) set(x, y, ...c);
-  }
+// Sanity: the squircle's bottom-center must be opaque (not clipped).
+const bc = ((SIZE - 3) * SIZE + (SIZE >> 1)) * 4;
+if (out.data[bc + 3] < 200) {
+  throw new Error('Render looks clipped (bottom-center is transparent). Increase PAD_BOTTOM.');
 }
-arc(150, 128, 40, 10, -52, 52, WHITE);
-arc(150, 128, 66, 10, -48, 48, WHITE);
 
-// ---- encode PNG ----
-const crcTable = (() => {
-  const t = new Uint32Array(256);
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    t[n] = c >>> 0;
-  }
-  return t;
-})();
-function crc32(b) {
-  let c = 0xffffffff;
-  for (let i = 0; i < b.length; i++) c = crcTable[(c ^ b[i]) & 0xff] ^ (c >>> 8);
-  return (c ^ 0xffffffff) >>> 0;
-}
-function chunk(type, data) {
-  const len = Buffer.alloc(4);
-  len.writeUInt32BE(data.length, 0);
-  const t = Buffer.from(type, 'ascii');
-  const crc = Buffer.alloc(4);
-  crc.writeUInt32BE(crc32(Buffer.concat([t, data])), 0);
-  return Buffer.concat([len, t, data, crc]);
-}
-const ihdr = Buffer.alloc(13);
-ihdr.writeUInt32BE(S, 0);
-ihdr.writeUInt32BE(S, 4);
-ihdr[8] = 8; ihdr[9] = 6; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
-const raw = Buffer.alloc((S * 4 + 1) * S);
-for (let y = 0; y < S; y++) {
-  raw[y * (S * 4 + 1)] = 0; // filter none
-  buf.copy(raw, y * (S * 4 + 1) + 1, y * S * 4, (y + 1) * S * 4);
-}
-const idat = zlib.deflateSync(raw, { level: 9 });
-const png = Buffer.concat([
-  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-  chunk('IHDR', ihdr),
-  chunk('IDAT', idat),
-  chunk('IEND', Buffer.alloc(0)),
-]);
-const dir = path.join(__dirname, '..', 'media');
-fs.mkdirSync(dir, { recursive: true });
-fs.writeFileSync(path.join(dir, 'icon.png'), png);
-console.log('Wrote media/icon.png', png.length, 'bytes');
+fs.writeFileSync(outPath, PNG.sync.write(out, { deflateLevel: 9 }));
+console.log(`Wrote media/icon.png (${SIZE}x${SIZE}) from media/icon.svg via ${chrome}`);

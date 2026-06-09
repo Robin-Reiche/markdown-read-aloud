@@ -1,16 +1,46 @@
+<!-- Marketplace badges render only once the extension is live on the Marketplace.
+     Re-enable them (delete these two comment markers) right after your first `vsce publish`:
+[![Version](https://img.shields.io/visual-studio-marketplace/v/RobinReiche.markdown-read-aloud?label=Marketplace&color=0C9488)](https://marketplace.visualstudio.com/items?itemName=RobinReiche.markdown-read-aloud)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/RobinReiche.markdown-read-aloud?color=0C9488)](https://marketplace.visualstudio.com/items?itemName=RobinReiche.markdown-read-aloud)
+[![Rating](https://img.shields.io/visual-studio-marketplace/r/RobinReiche.markdown-read-aloud?color=0C9488)](https://marketplace.visualstudio.com/items?itemName=RobinReiche.markdown-read-aloud&ssr=false#review-details)
+-->
+[![CI](https://github.com/Robin-Reiche/markdown-read-aloud/actions/workflows/ci.yml/badge.svg)](https://github.com/Robin-Reiche/markdown-read-aloud/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-0C9488.svg)](LICENSE)
+
 # Markdown Read Aloud
 
+> **Free neural text-to-speech (TTS) for Markdown — no API key, no sign-up.**
+
 Listen to your Markdown instead of reading it. **Markdown Read Aloud** turns any
-`.md` file into clean, natural speech using high-quality **neural voices — for free,
-no API key, no sign-up.** Built for the age of AI-generated docs, when you have more
-Markdown to get through than time to read it.
+`.md` file into clean, natural speech using high-quality **neural voices — for free**.
+Built for the age of AI-generated docs, when you have more Markdown to get through
+than time to read it: skim long READMEs, specs and ADRs by ear, or **proofread your
+own writing by listening** to it.
 
-![Read Aloud player](media/icon.png)
+<!-- TODO: add media/demo.gif (a short screen capture of the player reading + sentence highlight), then re-enable the line below.
+![Markdown Read Aloud — the player reading a document aloud beside the editor, with the current sentence highlighted](media/demo.gif)
+-->
+![Markdown Read Aloud](media/icon.png)
 
-## Why it's nice
+## Free neural voices, no API key
 
-- **🎧 Cloud-quality voices, free.** Uses Microsoft Edge's neural voices (the same
-  models behind Azure's "natural" voices) — genuinely expressive, not robotic.
+A free, no-sign-up alternative to **ElevenLabs, Speechify and Azure TTS** for reading
+Markdown aloud. Every other way to get *natural* voices in VS Code makes you pay or sign
+up; the free options sound robotic. Markdown Read Aloud gives you neural quality for free,
+with zero setup.
+
+| | Voice quality | Cost | Setup |
+|---|---|---|---|
+| **Markdown Read Aloud** | 🟢 Neural | 🟢 **Free** | 🟢 None |
+| ElevenLabs / Speechify / Azure | 🟢 Neural | 🔴 Paid API key | 🟡 Account + key |
+| System / OS-voice extensions | 🔴 Robotic | 🟢 Free | 🟢 None |
+
+It uses Microsoft Edge's neural voices — the same models behind Azure's "natural" voices —
+through the same endpoint Edge's own Read Aloud uses. No account, no key, nothing to configure.
+
+## Natural text-to-speech, built for Markdown
+
+- **🎧 Cloud-quality voices, free.** Genuinely expressive neural text-to-speech, not the robotic system voice.
 - **🌍 Automatic language detection.** Reads German with a German voice, English with
   an English voice, and so on across **75 languages** — detected from the file itself.
   One consistent voice per document by default; optional per-paragraph switching for
@@ -24,7 +54,15 @@ Markdown to get through than time to read it.
 - **🖍️ Follow along.** The sentence being read is highlighted and scrolled to in the editor.
 - **🎚️ Keeps playing in the background** while you work in other files.
 
-## How to use
+## Automatic language detection across 75 languages
+
+The document's language is detected from its text and matched to a native voice
+automatically — including German, Spanish, French, Italian, Portuguese, Dutch, Polish,
+Russian, Japanese, Chinese, Korean and more. No setting to flip. By default one
+consistent voice reads the whole document (easiest to follow); for mixed-language files
+you can switch the voice **per paragraph** to match each paragraph's language.
+
+## Read aloud from cursor, selection, or any heading
 
 1. Open a Markdown file.
 2. Run a command (Command Palette, or the **🔊 speaker icon** in the editor title bar):
@@ -34,7 +72,14 @@ Markdown to get through than time to read it.
 3. A player opens beside your editor. Hit ▶, pick ♀/♂, set the speed, jump around the outline.
    - Play/Pause from anywhere: `Ctrl+Alt+Space`.
 
-## Engines
+## Accessibility & proofreading
+
+Hearing text instead of reading it helps with **dyslexia, low vision and reading
+fatigue**, and catches mistakes the eye skips — so it doubles as a **proofreader** for
+your own docs. It's a lightweight read-aloud / screen-reader companion for the one format
+developers write most: Markdown.
+
+## Engines — offline & system-voice fallback
 
 | Engine | Quality | Network | Notes |
 |---|---|---|---|

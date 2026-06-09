@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question / usage help (Marketplace Q&A)
+    url: https://marketplace.visualstudio.com/items?itemName=RobinReiche.markdown-read-aloud&ssr=false#qna
+    about: Ask how-to and usage questions on the Marketplace Q&A.

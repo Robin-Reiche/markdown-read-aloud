@@ -3,8 +3,15 @@
 .vscode-test/**
 src/**
 scripts/**
+ui-mockups/**
 voice_samples/**
 test_data/**
+media/_concepts/**
+media/icon.svg
+media/icon-alt-ink.svg
+media/social-preview.png
+CONTRIBUTING.md
+*.vsix
 node_modules/**
 **/*.ts
 **/*.map
