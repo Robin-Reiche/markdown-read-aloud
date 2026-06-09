@@ -52,7 +52,7 @@ export class PlayerPanel {
     }
     const panel = vscode.window.createWebviewPanel(
       PlayerPanel.viewType,
-      'Read Aloud',
+      vscode.l10n.t('Read Aloud'),
       { viewColumn: column, preserveFocus: true },
       {
         enableScripts: true,
@@ -131,7 +131,7 @@ export class PlayerPanel {
         break;
       case 'ended':
         this.clearHighlight();
-        this.panel.title = this.job ? this.job.title : 'Read Aloud';
+        this.panel.title = this.job ? this.job.title : vscode.l10n.t('Read Aloud');
         break;
       case 'setGender':
         this.changeGender(m.gender);
@@ -195,7 +195,10 @@ export class PlayerPanel {
           // Never reached the endpoint at all this session → likely offline.
           this.engineId = 'browser';
           vscode.window.showWarningMessage(
-            `Read Aloud: Edge voices unreachable (${err?.message || err}). Falling back to system voices (offline).`
+            vscode.l10n.t(
+              'Read Aloud: Edge voices unreachable ({0}). Falling back to system voices (offline).',
+              String(err?.message || err)
+            )
           );
           this.post({ type: 'engineFallback', engine: 'browser' });
         } else {
@@ -216,7 +219,9 @@ export class PlayerPanel {
     if (choice === 'supertonic' && !this.supertonicWarned) {
       this.supertonicWarned = true;
       vscode.window.showInformationMessage(
-        'Read Aloud: the offline Supertonic engine is coming in a later update — using Edge neural voices for now.'
+        vscode.l10n.t(
+          'Read Aloud: the offline Supertonic engine is coming in a later update — using Edge neural voices for now.'
+        )
       );
     }
     return 'edge';
@@ -295,7 +300,7 @@ export class PlayerPanel {
     const text = this.job.chunks.map((c) => c.text).join(' ').slice(0, 3000);
     const det = detectLocale(text, fallback);
     this.changeLocale(det.locale);
-    vscode.window.setStatusBarMessage(`Read Aloud: detected ${localeDisplay(det.locale)}`, 3000);
+    vscode.window.setStatusBarMessage(vscode.l10n.t('Read Aloud: detected {0}', localeDisplay(det.locale)), 3000);
   }
 
   /** Everything the webview needs to render the voice/language controls. */
@@ -364,8 +369,49 @@ export class PlayerPanel {
     this.panel.webview.postMessage(message);
   }
 
+  /** Localized UI strings injected into the webview, where vscode.l10n is unavailable.
+   *  Calls must use the literal vscode.l10n.t() form so @vscode/l10n-dev can extract them. */
+  private uiStrings(): Record<string, string> {
+    return {
+      title: vscode.l10n.t('Read Aloud'),
+      play: vscode.l10n.t('Play'),
+      pause: vscode.l10n.t('Pause'),
+      stop: vscode.l10n.t('Stop'),
+      prev: vscode.l10n.t('Previous sentence'),
+      next: vscode.l10n.t('Next sentence'),
+      seek: vscode.l10n.t('Seek'),
+      slower: vscode.l10n.t('Slower'),
+      faster: vscode.l10n.t('Faster'),
+      speed: vscode.l10n.t('Speed'),
+      mute: vscode.l10n.t('Mute'),
+      unmute: vscode.l10n.t('Unmute'),
+      volume: vscode.l10n.t('Volume'),
+      female: vscode.l10n.t('Female'),
+      male: vscode.l10n.t('Male'),
+      voice: vscode.l10n.t('Voice'),
+      language: vscode.l10n.t('Language'),
+      sections: vscode.l10n.t('Sections'),
+      autoLabel: vscode.l10n.t('Auto'),
+      autoLangLabel: vscode.l10n.t('Auto language (per paragraph)'),
+      languageAndVoices: vscode.l10n.t('Language & all voices'),
+      detect: vscode.l10n.t('Detect'),
+      detectTooltip: vscode.l10n.t("Detect the document's language and switch to it"),
+      multilingual: vscode.l10n.t('multilingual'),
+      sentencesOne: vscode.l10n.t('{0} sentence'),
+      sentencesOther: vscode.l10n.t('{0} sentences'),
+      estSeconds: vscode.l10n.t('~{0} s'),
+      estMinutes: vscode.l10n.t('~{0} min'),
+      autoPrefix: vscode.l10n.t('Auto: {0}'),
+    };
+  }
+
   private getHtml(webview: vscode.Webview): string {
     const n = nonce();
+    const L = this.uiStrings();
+    const esc = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    const l10nBlob = JSON.stringify(L).replace(/</g, '\\u003c');
+    const uiLang = vscode.env.language || 'en';
     const js = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'player.js'));
     const css = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'player.css'));
     const csp = [
@@ -378,18 +424,18 @@ export class PlayerPanel {
     ].join('; ');
 
     return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${esc(uiLang)}">
 <head>
 <meta charset="UTF-8" />
 <meta http-equiv="Content-Security-Policy" content="${csp}" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link href="${css}" rel="stylesheet" />
-<title>Read Aloud</title>
+<title>${esc(L.title)}</title>
 </head>
 <body>
   <div id="app">
     <div id="head">
-      <div id="title">Read Aloud</div>
+      <div id="title">${esc(L.title)}</div>
       <div id="lang"></div>
     </div>
 
@@ -400,52 +446,52 @@ export class PlayerPanel {
 
     <section class="panel" id="panel-transport">
       <div id="progress">
-        <input id="scrub" type="range" min="0" max="1000" value="0" step="1" aria-label="Seek" />
+        <input id="scrub" type="range" min="0" max="1000" value="0" step="1" aria-label="${esc(L.seek)}" />
         <div id="times"><span id="time-cur">0:00</span><span id="time-total">0:00</span></div>
       </div>
 
       <div id="transport">
-        <button id="prev" class="ghost" title="Previous sentence" aria-label="Previous sentence"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5v14h2V5H6zm3 7l9 7V5l-9 7z"/></svg></button>
-        <div class="key-well"><button id="play" class="key" aria-pressed="false" aria-label="Play"><span class="glyph"><svg class="tri" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><svg class="bars" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></span></button></div>
-        <button id="stop" class="ghost" title="Stop" aria-label="Stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></button>
-        <button id="next" class="ghost" title="Next sentence" aria-label="Next sentence"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5v14h2V5h-2zM15 12L6 5v14l9-7z"/></svg></button>
+        <button id="prev" class="ghost" title="${esc(L.prev)}" aria-label="${esc(L.prev)}"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5v14h2V5H6zm3 7l9 7V5l-9 7z"/></svg></button>
+        <div class="key-well"><button id="play" class="key" aria-pressed="false" aria-label="${esc(L.play)}"><span class="glyph"><svg class="tri" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><svg class="bars" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></span></button></div>
+        <button id="stop" class="ghost" title="${esc(L.stop)}" aria-label="${esc(L.stop)}"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></button>
+        <button id="next" class="ghost" title="${esc(L.next)}" aria-label="${esc(L.next)}"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5v14h2V5h-2zM15 12L6 5v14l9-7z"/></svg></button>
       </div>
     </section>
 
     <section class="panel" id="panel-settings">
       <div id="meta">
         <div id="gender-toggle" class="pill">
-          <button data-gender="female" id="g-female">♀ <span id="g-female-name">Female</span></button>
-          <button data-gender="male" id="g-male">♂ <span id="g-male-name">Male</span></button>
+          <button data-gender="female" id="g-female">♀ <span id="g-female-name">${esc(L.female)}</span></button>
+          <button data-gender="male" id="g-male">♂ <span id="g-male-name">${esc(L.male)}</span></button>
         </div>
       </div>
 
       <div id="speedwrap" class="sliderrow">
-        <button id="speed-down" class="spd-btn" title="Slower" aria-label="Slower"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="11" width="14" height="2" rx="1"/></svg></button>
-        <input id="speed" type="range" min="0.5" max="2.5" value="1" step="0.05" aria-label="Speed" />
+        <button id="speed-down" class="spd-btn" title="${esc(L.slower)}" aria-label="${esc(L.slower)}"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="11" width="14" height="2" rx="1"/></svg></button>
+        <input id="speed" type="range" min="0.5" max="2.5" value="1" step="0.05" aria-label="${esc(L.speed)}" />
         <span id="speed-val">1.0×</span>
-        <button id="speed-up" class="spd-btn" title="Faster" aria-label="Faster"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg></button>
+        <button id="speed-up" class="spd-btn" title="${esc(L.faster)}" aria-label="${esc(L.faster)}"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg></button>
       </div>
 
       <div id="volrow" class="sliderrow">
-        <button id="mute" class="vol-btn" title="Mute" aria-label="Mute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path class="spk" d="M4 9.5v5h3.5L12 18V6L7.5 9.5H4z" fill="currentColor" stroke="none"/><path class="wave wave1" d="M15.5 9.8a3.3 3.3 0 010 4.4"/><path class="wave wave2" d="M18 7.4a6.5 6.5 0 010 9.2"/><path class="slash" d="M3.5 3.5l17 17"/></svg></button>
-        <input id="volume" type="range" min="0" max="1" step="0.01" value="1" aria-label="Volume" />
+        <button id="mute" class="vol-btn" title="${esc(L.mute)}" aria-label="${esc(L.mute)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path class="spk" d="M4 9.5v5h3.5L12 18V6L7.5 9.5H4z" fill="currentColor" stroke="none"/><path class="wave wave1" d="M15.5 9.8a3.3 3.3 0 010 4.4"/><path class="wave wave2" d="M18 7.4a6.5 6.5 0 010 9.2"/><path class="slash" d="M3.5 3.5l17 17"/></svg></button>
+        <input id="volume" type="range" min="0" max="1" step="0.01" value="1" aria-label="${esc(L.volume)}" />
         <span id="vol-val">100%</span>
       </div>
 
       <details id="advanced">
-        <summary>Language &amp; all voices</summary>
+        <summary>${esc(L.languageAndVoices)}</summary>
         <div class="advanced-body">
-          <label class="check"><input type="checkbox" id="auto-lang" /> Auto language (per paragraph)</label>
-          <label class="adv-label" for="lang-button">Language</label>
+          <label class="check"><input type="checkbox" id="auto-lang" /> ${esc(L.autoLangLabel)}</label>
+          <label class="adv-label" for="lang-button">${esc(L.language)}</label>
           <div class="lang-row">
             <div class="lang-combo" id="lang-combo">
-              <button type="button" id="lang-button" class="lang-button" aria-haspopup="listbox" aria-expanded="false" aria-label="Language"><span class="lang-flag" id="lang-button-flag"></span><span class="lang-label" id="lang-button-label">Auto</span><svg class="lang-caret" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg></button>
+              <button type="button" id="lang-button" class="lang-button" aria-haspopup="listbox" aria-expanded="false" aria-label="${esc(L.language)}"><span class="lang-flag" id="lang-button-flag"></span><span class="lang-label" id="lang-button-label">${esc(L.autoLabel)}</span><svg class="lang-caret" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg></button>
               <ul class="lang-list" id="lang-list" role="listbox" tabindex="-1" hidden></ul>
             </div>
-            <button id="detect-lang" class="detect-btn" title="Detect the document's language and switch to it">⤿ Detect</button>
+            <button id="detect-lang" class="detect-btn" title="${esc(L.detectTooltip)}">⤿ ${esc(L.detect)}</button>
           </div>
-          <label class="adv-label" for="voice-select">Voice</label>
+          <label class="adv-label" for="voice-select">${esc(L.voice)}</label>
           <select id="voice-select"></select>
         </div>
       </details>
@@ -455,6 +501,7 @@ export class PlayerPanel {
       <div id="outline"></div>
     </section>
   </div>
+  <script nonce="${n}">window.__l10n=${l10nBlob};window.__uiLocale=${JSON.stringify(uiLang)};</script>
   <script nonce="${n}" src="${js}"></script>
 </body>
 </html>`;

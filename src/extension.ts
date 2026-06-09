@@ -12,7 +12,7 @@ export function activate(context: vscode.ExtensionContext) {
   reg('markdownReadAloud.stop', () => PlayerPanel.current?.control('stop'));
   reg('markdownReadAloud.togglePlayPause', () => {
     if (PlayerPanel.current) PlayerPanel.current.control('playpause');
-    else vscode.window.showInformationMessage('Read Aloud: no active player. Run "Read Aloud: Read from Cursor" to start.');
+    else vscode.window.showInformationMessage(vscode.l10n.t('Read Aloud: no active player. Run "Read Aloud: Read from Cursor" to start.'));
   });
   reg('markdownReadAloud.openPlayer', () => PlayerPanel.show(context.extensionUri));
 }
@@ -27,7 +27,7 @@ async function resolveDocument(uriArg?: vscode.Uri): Promise<vscode.TextDocument
   }
   const editor = vscode.window.activeTextEditor;
   if (editor) return editor.document;
-  vscode.window.showErrorMessage('Read Aloud: open a Markdown file first.');
+  vscode.window.showErrorMessage(vscode.l10n.t('Read Aloud: open a Markdown file first.'));
   return undefined;
 }
 
@@ -36,7 +36,7 @@ async function readDocument(context: vscode.ExtensionContext, uriArg?: vscode.Ur
   if (!doc) return;
   const job = buildJob({ source: doc.getText(), baseOffset: 0, docUri: doc.uri, title: titleFor(doc.uri) });
   if (!job) {
-    vscode.window.showInformationMessage('Read Aloud: nothing readable found in this document.');
+    vscode.window.showInformationMessage(vscode.l10n.t('Read Aloud: nothing readable found in this document.'));
     return;
   }
   PlayerPanel.show(context.extensionUri).startJob(job, 0);
@@ -45,13 +45,13 @@ async function readDocument(context: vscode.ExtensionContext, uriArg?: vscode.Ur
 async function readFromCursor(context: vscode.ExtensionContext) {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
-    vscode.window.showErrorMessage('Read Aloud: open a Markdown file first.');
+    vscode.window.showErrorMessage(vscode.l10n.t('Read Aloud: open a Markdown file first.'));
     return;
   }
   const doc = editor.document;
   const job = buildJob({ source: doc.getText(), baseOffset: 0, docUri: doc.uri, title: titleFor(doc.uri) });
   if (!job) {
-    vscode.window.showInformationMessage('Read Aloud: nothing readable found in this document.');
+    vscode.window.showInformationMessage(vscode.l10n.t('Read Aloud: nothing readable found in this document.'));
     return;
   }
   const offset = doc.offsetAt(editor.selection.active);
@@ -68,9 +68,9 @@ async function readSelection(context: vscode.ExtensionContext) {
   const sel = editor.selection;
   const source = doc.getText(sel);
   const baseOffset = doc.offsetAt(sel.start);
-  const job = buildJob({ source, baseOffset, docUri: doc.uri, title: `${titleFor(doc.uri)} (selection)` });
+  const job = buildJob({ source, baseOffset, docUri: doc.uri, title: vscode.l10n.t('{0} (selection)', titleFor(doc.uri)) });
   if (!job) {
-    vscode.window.showInformationMessage('Read Aloud: nothing readable in the selection.');
+    vscode.window.showInformationMessage(vscode.l10n.t('Read Aloud: nothing readable in the selection.'));
     return;
   }
   PlayerPanel.show(context.extensionUri).startJob(job, 0);

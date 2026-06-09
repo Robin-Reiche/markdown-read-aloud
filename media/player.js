@@ -2,6 +2,18 @@
   const vscode = acquireVsCodeApi();
   const $ = (id) => document.getElementById(id);
 
+  // Localized UI strings injected by the host (vscode.l10n is unavailable in the
+  // webview). English defaults keep the player working if the blob is ever missing.
+  const L = Object.assign(
+    {
+      play: 'Play', pause: 'Pause', mute: 'Mute', unmute: 'Unmute',
+      female: 'Female', male: 'Male', multilingual: 'multilingual', sections: 'Sections',
+      sentencesOne: '{0} sentence', sentencesOther: '{0} sentences',
+      estSeconds: '~{0} s', estMinutes: '~{0} min', autoPrefix: 'Auto: {0}',
+    },
+    window.__l10n || {}
+  );
+
   const audio = new Audio();
   audio.preservesPitch = true;
 
@@ -314,11 +326,11 @@
     for (const g of ['female', 'male']) {
       if (!groups[g] || !groups[g].length) continue;
       const og = document.createElement('optgroup');
-      og.label = g === 'female' ? '♀ Female' : '♂ Male';
+      og.label = g === 'female' ? '♀ ' + L.female : '♂ ' + L.male;
       for (const v of groups[g]) {
         const o = document.createElement('option');
         o.value = v.shortName;
-        o.textContent = v.name + (v.multilingual ? ' · multilingual' : '');
+        o.textContent = v.name + (v.multilingual ? ' · ' + L.multilingual : '');
         og.appendChild(o);
       }
       sel.appendChild(og);
@@ -353,7 +365,9 @@
   function estLabel() {
     if (!totalChars) return '';
     const sec = totalChars / CHARS_PER_SEC / Math.max(0.5, rate);
-    return sec < 90 ? '~' + Math.round(sec) + ' s' : '~' + Math.round(sec / 60) + ' min';
+    return sec < 90
+      ? L.estSeconds.replace('{0}', String(Math.round(sec)))
+      : L.estMinutes.replace('{0}', String(Math.round(sec / 60)));
   }
   function renderHeader() {
     if (!job) return;
@@ -361,12 +375,13 @@
     let langPart;
     if (job.autoLang) {
       const names = (job.languages || []).map((l) => l.name);
-      langPart = names.length > 1 ? 'Auto: ' + names.join(', ') : (names[0] || job.localeName);
+      langPart = names.length > 1 ? L.autoPrefix.replace('{0}', names.join(', ')) : (names[0] || job.localeName);
     } else {
       langPart = job.localeName;
     }
-    $('lang').textContent =
-      langPart + ' · ' + job.chunks.length + ' sentences' + (est ? ' · ' + est : '');
+    const n = job.chunks.length;
+    const sentences = (n === 1 ? L.sentencesOne : L.sentencesOther).replace('{0}', String(n));
+    $('lang').textContent = langPart + ' · ' + sentences + (est ? ' · ' + est : '');
   }
 
   // In auto mode the language/voice pickers are informational (disabled); the
@@ -389,7 +404,7 @@
     if (panel) panel.style.display = '';
     const head = document.createElement('div');
     head.className = 'outline-head';
-    head.textContent = 'Sections';
+    head.textContent = L.sections;
     box.appendChild(head);
     for (const item of job.outline) {
       const b = document.createElement('button');
@@ -469,7 +484,7 @@
     const p = $('play');
     if (!p) return;
     p.setAttribute('aria-pressed', playing ? 'true' : 'false');
-    p.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    p.setAttribute('aria-label', playing ? L.pause : L.play);
   }
 
   // ---------- controls ----------
@@ -519,8 +534,8 @@
     const muted = v <= 0.001;
     b.classList.toggle('muted', muted);
     b.classList.toggle('low', !muted && v < 0.5);
-    b.setAttribute('aria-label', muted ? 'Unmute' : 'Mute');
-    b.title = muted ? 'Unmute' : 'Mute';
+    b.setAttribute('aria-label', muted ? L.unmute : L.mute);
+    b.title = muted ? L.unmute : L.mute;
   }
   $('volume').addEventListener('input', () => applyVolume(Number($('volume').value), false));
   $('volume').addEventListener('change', () => post({ type: 'persistVolume', value: volume }));

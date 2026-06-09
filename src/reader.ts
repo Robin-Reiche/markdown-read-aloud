@@ -93,5 +93,5 @@ export function chunkIndexForOffset(job: ReadJob, offset: number): number {
 }
 
 export function titleFor(uri: vscode.Uri): string {
-  return path.basename(uri.fsPath) || 'Document';
+  return path.basename(uri.fsPath) || vscode.l10n.t('Document');
 }

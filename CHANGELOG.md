@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0 — 2026-06-09
+
+- **Localized UI.** The player and all extension text now follow your VS Code display
+  language, with full translations for German, Spanish, French, Italian, Japanese,
+  Simplified Chinese and Brazilian Portuguese (anything untranslated falls back to English).
+- Language names (e.g. "American English") now appear in your display language across the
+  header, the language picker and the "detected" status message.
+
 ## 1.0.2 — 2026-06-09
 
 - Added an animated demo (the player reading with live sentence highlighting) to the README and Marketplace listing.

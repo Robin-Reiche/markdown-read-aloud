@@ -2,7 +2,7 @@
   "name": "markdown-read-aloud",
   "displayName": "Markdown Read Aloud — Free Neural Text-to-Speech",
   "description": "Read Markdown files aloud with free, high-quality neural voices — no API key, no sign-up. Text-to-speech (TTS) with automatic language detection across 75 languages, live 0.5×–2.5× speed, read from cursor/selection/heading, and sentence highlighting. Great for proofreading and listening to docs and READMEs.",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "publisher": "RobinReiche",
   "license": "MIT",
   "repository": {
@@ -54,6 +54,7 @@
     "document reader"
   ],
   "main": "./dist/extension.js",
+  "l10n": "./l10n",
   "icon": "media/icon.png",
   "galleryBanner": {
     "color": "#0B1413",
@@ -66,28 +67,28 @@
     "commands": [
       {
         "command": "markdownReadAloud.readDocument",
-        "title": "Read Aloud: Read Whole Document",
+        "title": "%cmd.readDocument.title%",
         "icon": "$(unmute)"
       },
       {
         "command": "markdownReadAloud.readFromCursor",
-        "title": "Read Aloud: Read from Cursor"
+        "title": "%cmd.readFromCursor.title%"
       },
       {
         "command": "markdownReadAloud.readSelection",
-        "title": "Read Aloud: Read Selection"
+        "title": "%cmd.readSelection.title%"
       },
       {
         "command": "markdownReadAloud.togglePlayPause",
-        "title": "Read Aloud: Play / Pause"
+        "title": "%cmd.togglePlayPause.title%"
       },
       {
         "command": "markdownReadAloud.stop",
-        "title": "Read Aloud: Stop"
+        "title": "%cmd.stop.title%"
       },
       {
         "command": "markdownReadAloud.openPlayer",
-        "title": "Read Aloud: Open Player"
+        "title": "%cmd.openPlayer.title%"
       }
     ],
     "menus": {
@@ -139,7 +140,7 @@
       }
     ],
     "configuration": {
-      "title": "Markdown Read Aloud",
+      "title": "%config.title%",
       "properties": {
         "markdownReadAloud.engine": {
           "type": "string",
@@ -149,12 +150,12 @@
             "browser"
           ],
           "enumDescriptions": [
-            "Microsoft Edge neural voices — free, cloud quality, needs internet (recommended)",
-            "Supertonic — fully offline neural voices (downloads ~260 MB models on first use)",
-            "System voices via the browser engine — works offline, lower quality (last resort)"
+            "%config.engine.enum.edge%",
+            "%config.engine.enum.supertonic%",
+            "%config.engine.enum.browser%"
           ],
           "default": "edge",
-          "markdownDescription": "Which text-to-speech engine to use."
+          "markdownDescription": "%config.engine.description%"
         },
         "markdownReadAloud.preferredGender": {
           "type": "string",
@@ -163,41 +164,41 @@
             "male"
           ],
           "default": "female",
-          "description": "Preferred voice gender when auto-selecting a voice for a language."
+          "description": "%config.preferredGender.description%"
         },
         "markdownReadAloud.speed": {
           "type": "number",
           "default": 1,
           "minimum": 0.5,
           "maximum": 2.5,
-          "description": "Default playback speed (0.5×–2.5×). Adjustable live in the player."
+          "description": "%config.speed.description%"
         },
         "markdownReadAloud.volume": {
           "type": "number",
           "default": 1,
           "minimum": 0,
           "maximum": 1,
-          "description": "Default playback volume (0–1). Adjustable live in the player."
+          "description": "%config.volume.description%"
         },
         "markdownReadAloud.autoDetectLanguage": {
           "type": "boolean",
           "default": true,
-          "description": "Detect the document's main language automatically and pick a matching voice."
+          "description": "%config.autoDetectLanguage.description%"
         },
         "markdownReadAloud.perParagraphLanguage": {
           "type": "boolean",
           "default": false,
-          "description": "Switch the voice per paragraph to match each paragraph's language (for mixed-language docs). Off by default: one consistent voice is easier to follow. Toggle live in the player."
+          "description": "%config.perParagraphLanguage.description%"
         },
         "markdownReadAloud.fallbackLanguage": {
           "type": "string",
           "default": "en-US",
-          "description": "Language (BCP-47) to use when detection is unreliable or unsupported."
+          "description": "%config.fallbackLanguage.description%"
         },
         "markdownReadAloud.voiceOverrides": {
           "type": "object",
           "default": {},
-          "markdownDescription": "Advanced: override the voice per language, e.g. `{ \"de-DE\": \"de-DE-KatjaNeural\" }`. Open the player to see voice IDs.",
+          "markdownDescription": "%config.voiceOverrides.description%",
           "additionalProperties": {
             "type": "string"
           }
@@ -205,7 +206,7 @@
         "markdownReadAloud.announceHeadings": {
           "type": "boolean",
           "default": false,
-          "description": "Say \"Heading\" before each heading. Off by default (gets repetitive)."
+          "description": "%config.announceHeadings.description%"
         },
         "markdownReadAloud.codeBlocks": {
           "type": "string",
@@ -215,12 +216,12 @@
             "read"
           ],
           "enumDescriptions": [
-            "Ignore code blocks entirely",
-            "Say \"code block\" instead of reading the code",
-            "Read the code aloud (usually unintelligible)"
+            "%config.codeBlocks.enum.skip%",
+            "%config.codeBlocks.enum.announce%",
+            "%config.codeBlocks.enum.read%"
           ],
           "default": "announce",
-          "description": "How to handle fenced code blocks."
+          "description": "%config.codeBlocks.description%"
         },
         "markdownReadAloud.tables": {
           "type": "string",
@@ -229,12 +230,12 @@
             "read"
           ],
           "default": "skip",
-          "description": "How to handle tables. Reading them aloud is usually noisy."
+          "description": "%config.tables.description%"
         },
         "markdownReadAloud.highlightWhileReading": {
           "type": "boolean",
           "default": true,
-          "description": "Highlight and scroll to the sentence currently being read in the editor."
+          "description": "%config.highlightWhileReading.description%"
         }
       }
     }
@@ -244,7 +245,8 @@
     "build": "node esbuild.js --production",
     "watch": "node esbuild.js --watch",
     "typecheck": "tsc --noEmit",
-    "package": "vsce package --no-dependencies"
+    "package": "vsce package --no-dependencies",
+    "l10n": "vscode-l10n-dev export -o ./l10n ./src"
   },
   "dependencies": {
     "eld": "^2.0.3",
@@ -258,6 +260,7 @@
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@types/vscode": "^1.90.0",
+    "@vscode/l10n-dev": "^0.0.35",
     "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.24.0",
     "flag-icons": "^7.5.0",

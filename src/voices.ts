@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import voicesData from './data/voices.json';
 import type { Gender } from './types';
 
@@ -68,10 +69,28 @@ export function displayName(shortName: string): string {
   return part.replace(/Multilingual/i, '').replace(/Neural$/i, '') || shortName;
 }
 
+// Render language/region names in the user's VS Code display language (e.g. a German
+// UI shows "Englisch (USA)" instead of "American English"). Intl/ICU supplies the names
+// for all locales, so no per-string translation is needed. vscode.env.language is the UI
+// locale (independent of the document's reading language). Memoized per session.
+let _displayNames: Intl.DisplayNames | null | undefined;
+function displayNames(): Intl.DisplayNames | null {
+  if (_displayNames !== undefined) return _displayNames;
+  for (const loc of [vscode.env.language, 'en']) {
+    try {
+      _displayNames = new Intl.DisplayNames([loc], { type: 'language' });
+      return _displayNames;
+    } catch {
+      /* try the next locale */
+    }
+  }
+  _displayNames = null;
+  return _displayNames;
+}
+
 export function localeDisplay(locale: string): string {
   try {
-    const dn = new Intl.DisplayNames(['en'], { type: 'language' });
-    return dn.of(locale) || locale;
+    return displayNames()?.of(locale) || locale;
   } catch {
     return locale;
   }
