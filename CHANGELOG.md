@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1 — 2026-06-09
+
+- Fix the README Marketplace badges (version / installs / rating). shields.io retired its
+  Visual Studio Marketplace badge service, so they showed "retired badge"; switched to
+  vsmarketplacebadges.dev.
+
 ## 1.1.0 — 2026-06-09
 
 - **Localized UI.** The player and all extension text now follow your VS Code display

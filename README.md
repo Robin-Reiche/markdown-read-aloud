@@ -1,6 +1,6 @@
-[![Version](https://img.shields.io/visual-studio-marketplace/v/RobinReiche.markdown-read-aloud?label=Marketplace&color=0C9488)](https://marketplace.visualstudio.com/items?itemName=RobinReiche.markdown-read-aloud)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/RobinReiche.markdown-read-aloud?color=0C9488)](https://marketplace.visualstudio.com/items?itemName=RobinReiche.markdown-read-aloud)
-[![Rating](https://img.shields.io/visual-studio-marketplace/r/RobinReiche.markdown-read-aloud?color=0C9488)](https://marketplace.visualstudio.com/items?itemName=RobinReiche.markdown-read-aloud&ssr=false#review-details)
+[![Version](https://vsmarketplacebadges.dev/version-short/RobinReiche.markdown-read-aloud.svg?label=Marketplace&color=0C9488&style=flat)](https://marketplace.visualstudio.com/items?itemName=RobinReiche.markdown-read-aloud)
+[![Installs](https://vsmarketplacebadges.dev/installs-short/RobinReiche.markdown-read-aloud.svg?color=0C9488&style=flat)](https://marketplace.visualstudio.com/items?itemName=RobinReiche.markdown-read-aloud)
+[![Rating](https://vsmarketplacebadges.dev/rating-star/RobinReiche.markdown-read-aloud.svg?color=0C9488&style=flat)](https://marketplace.visualstudio.com/items?itemName=RobinReiche.markdown-read-aloud&ssr=false#review-details)
 [![CI](https://github.com/Robin-Reiche/markdown-read-aloud/actions/workflows/ci.yml/badge.svg)](https://github.com/Robin-Reiche/markdown-read-aloud/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0C9488.svg)](LICENSE)
 
