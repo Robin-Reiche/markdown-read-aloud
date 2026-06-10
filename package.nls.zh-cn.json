@@ -23,5 +23,6 @@
   "config.codeBlocks.enum.announce": "朗读“代码块”而不是朗读代码内容",
   "config.codeBlocks.enum.read": "朗读代码内容（通常难以听懂）",
   "config.tables.description": "如何处理表格。朗读表格通常会很杂乱。",
-  "config.highlightWhileReading.description": "在编辑器中高亮并滚动到当前正在朗读的句子。"
+  "config.highlightWhileReading.description": "在编辑器中高亮并滚动到当前正在朗读的句子。",
+  "config.pronunciations.description": "在语音合成前应用的发音替换。键为单词（整词匹配、不区分大小写）或字面子串；值为实际朗读的内容，例如 `{ \"nginx\": \"engine x\" }`。放入工作区设置可让整个团队共享项目词典。"
 }

@@ -17,3 +17,6 @@ media/flags/
 scripts/out-*.png
 scripts/icon-preview.svg
 _render_tmp.js
+# internal working docs / throwaway prototype — kept locally, not for the public repo
+prototype/
+PRODUCT.md

@@ -23,5 +23,6 @@
   "config.codeBlocks.enum.announce": "Annoncer « bloc de code » au lieu de lire le code",
   "config.codeBlocks.enum.read": "Lire le code à voix haute (généralement incompréhensible)",
   "config.tables.description": "Comment traiter les tableaux. Les lire à voix haute est généralement confus.",
-  "config.highlightWhileReading.description": "Mettre en surbrillance la phrase en cours de lecture dans l'éditeur et y défiler."
+  "config.highlightWhileReading.description": "Mettre en surbrillance la phrase en cours de lecture dans l'éditeur et y défiler.",
+  "config.pronunciations.description": "Corrections de prononciation appliquées avant la synthèse vocale. Les clés sont des mots (mot entier, insensible à la casse) ou des sous-chaînes littérales ; les valeurs sont ce qui est prononcé à la place, p. ex. `{ \"nginx\": \"engine x\" }`. Dans les paramètres de l’espace de travail, toute l’équipe partage le dictionnaire du projet."
 }

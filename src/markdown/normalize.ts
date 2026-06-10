@@ -17,6 +17,33 @@ export function normalizeForSpeech(input: string): string {
   return t.trim();
 }
 
+const reEscape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const isWordy = (s: string) => /^[\p{L}\p{N}'’-]+$/u.test(s);
+
+/**
+ * User-defined pronunciation overrides (markdownReadAloud.pronunciations):
+ * plain words match case-insensitively on word boundaries ("nginx" → "engine x"),
+ * keys with other characters are replaced as literal substrings.
+ */
+export function applyPronunciations(text: string, map: Record<string, string> | undefined): string {
+  if (!map) return text;
+  let t = text;
+  for (const [key, spoken] of Object.entries(map)) {
+    if (!key || typeof spoken !== 'string') continue;
+    try {
+      if (isWordy(key)) {
+        const re = new RegExp(`(?<![\\p{L}\\p{N}])${reEscape(key)}(?![\\p{L}\\p{N}])`, 'giu');
+        t = t.replace(re, spoken);
+      } else {
+        t = t.split(key).join(spoken);
+      }
+    } catch {
+      /* a malformed key must never break synthesis */
+    }
+  }
+  return t;
+}
+
 /**
  * A rough strip of markdown used ONLY for language detection (not for speech).
  * Removes code, urls and syntax noise so the detector sees mostly prose.

@@ -9,10 +9,10 @@
 > **Free neural text-to-speech (TTS) for Markdown — no API key, no sign-up.**
 
 Listen to your Markdown instead of reading it. **Markdown Read Aloud** turns any
-`.md` file into clean, natural speech using high-quality **neural voices — for free**.
-Built for the age of AI-generated docs, when you have more Markdown to get through
-than time to read it: skim long READMEs, specs and ADRs by ear, or **proofread your
-own writing by listening** to it.
+`.md` file into a beautiful reader view and reads it as clean, natural speech using
+high-quality **neural voices — for free**. Built for the age of AI-generated docs,
+when you have more Markdown to get through than time to read it: skim long READMEs,
+specs and ADRs by ear, or **proofread your own writing by listening** to it.
 
 ![Markdown Read Aloud — the player reading a Markdown document aloud beside the editor, with the current sentence highlighted](media/preview_gif.gif)
 
@@ -35,6 +35,9 @@ through the same endpoint Edge's own Read Aloud uses. No account, no key, nothin
 ## Natural text-to-speech, built for Markdown
 
 - **🎧 Cloud-quality voices, free.** Genuinely expressive neural text-to-speech, not the robotic system voice.
+- **📖 A real reader, not a raw preview.** Your document renders as clean, styled prose —
+  no `#`/`*`/`[]()` noise — with the spoken sentence highlighted in place and gentle
+  auto-scroll that follows the voice.
 - **🌍 Automatic language detection.** Reads German with a German voice, English with
   an English voice, and so on across **75 languages** — detected from the file itself.
   One consistent voice per document by default; optional per-paragraph switching for
@@ -42,11 +45,12 @@ through the same endpoint Edge's own Read Aloud uses. No account, no key, nothin
 - **♀ ♂ Curated voices, not a wall of options.** One great female and one great male
   voice per language by default. Power users can still pick any voice.
 - **⏩ Speed & start point you control.** 0.5×–2.5× live, start from the cursor, a
-  selection, or jump to any heading.
-- **🧹 Handles messy Markdown.** Strips headings, lists, links, tables, code fences and
-  special characters so the voice reads prose, not syntax.
-- **🖍️ Follow along.** The sentence being read is highlighted and scrolled to in the editor.
-- **🎚️ Keeps playing in the background** while you work in other files.
+  selection, any heading — or click any sentence to read from exactly there.
+- **🔖 Picks up where you left off.** Every document remembers your last position.
+- **🧹 Handles messy Markdown.** Headings, lists, links, tables, code fences and
+  special characters become prose for the voice, never syntax.
+- **🎚️ Keeps playing in the background** — with a play/pause mini-player in the
+  VS Code status bar, the reader tab doesn't even need to be visible.
 
 ## Automatic language detection across 75 languages
 
@@ -63,8 +67,38 @@ you can switch the voice **per paragraph** to match each paragraph's language.
    - **Read Aloud: Read Whole Document**
    - **Read Aloud: Read from Cursor** — `Ctrl+Alt+R` (`Cmd+Alt+R` on macOS)
    - **Read Aloud: Read Selection** (right-click a selection)
-3. A player opens beside your editor. Hit ▶, pick ♀/♂, set the speed, jump around the outline.
-   - Play/Pause from anywhere: `Ctrl+Alt+Space`.
+3. The reader opens beside your editor and starts speaking. Click any sentence to read
+   from there, hover a heading for **▶ Read section**, drag the progress bar (headings
+   appear as chapter ticks) to jump anywhere.
+   - Play/Pause from anywhere: `Ctrl+Alt+Space`, or click the status-bar mini-player.
+   - In the reader: `Space` play/pause, `←`/`→` sentences, `+`/`−` speed, `M` mute,
+     `F` reading font, `Esc` stop.
+
+## A reading room inside VS Code
+
+The reader is built for long sessions, not five-second glances:
+
+- **Follows your VS Code theme** by default, with three hand-tuned reading themes —
+  Study (dark), Daylight (light) and Paper (sepia).
+- **Four bundled reading fonts** — Literata, Inter, Atkinson Hyperlegible (built for
+  maximum legibility) and IBM Plex Mono — plus Compact / Cozy / Wide comfort presets.
+- **Reading follows you, not the other way around.** Scroll wherever you like while
+  listening; a quiet “Back to reading” pill glides you back to the spoken sentence.
+- **Ambient focus** dims everything but the sentence being read.
+- **Collapsible sections** with per-section reading times, and a **sleep timer**
+  (stop after the current section, or 15/30/60 minutes with a gentle fade).
+
+## Proofread with your ears, fix with one click
+
+Hearing your own text catches the mistakes your eyes skip. When you hear one:
+
+- **Alt+Click the sentence** → the editor opens at exactly that source line.
+- Or hit the **✏️ edit button** → the source opens beside the reader at your current
+  sentence, and the reader re-renders live as you type — without losing your place or
+  interrupting playback.
+- Teach the voices your jargon with the **pronunciation dictionary**
+  (`markdownReadAloud.pronunciations`, e.g. `{ "nginx": "engine x" }`) — put it in
+  workspace settings and your whole team shares it.
 
 ## Accessibility & proofreading
 
@@ -97,7 +131,9 @@ Switch via the `markdownReadAloud.engine` setting.
 | `markdownReadAloud.announceHeadings` | `false` | Say "Heading" before headings. |
 | `markdownReadAloud.codeBlocks` | `announce` | `skip` / `announce` / `read` code blocks. |
 | `markdownReadAloud.tables` | `skip` | `skip` / `read` tables. |
-| `markdownReadAloud.highlightWhileReading` | `true` | Highlight the current sentence in the editor. |
+| `markdownReadAloud.highlightWhileReading` | `true` | Highlight the current sentence in the reader. |
+| `markdownReadAloud.volume` | `1.0` | Default playback volume (0–1). |
+| `markdownReadAloud.pronunciations` | `{}` | Pronunciation overrides, e.g. `{ "nginx": "engine x", "kubectl": "kube control" }`. |
 
 ## Privacy & note on the Edge engine
 

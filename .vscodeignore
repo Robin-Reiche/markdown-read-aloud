@@ -6,7 +6,11 @@ scripts/**
 ui-mockups/**
 voice_samples/**
 test_data/**
+prototype/**
+PRODUCT.md
+NOTES.md
 media/_concepts/**
+media/flags/**
 media/icon.svg
 media/icon-alt-ink.svg
 media/social-preview.png

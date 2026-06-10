@@ -23,5 +23,6 @@
   "config.codeBlocks.enum.announce": "Say \"code block\" instead of reading the code",
   "config.codeBlocks.enum.read": "Read the code aloud (usually unintelligible)",
   "config.tables.description": "How to handle tables. Reading them aloud is usually noisy.",
-  "config.highlightWhileReading.description": "Highlight and scroll to the sentence currently being read in the editor."
+  "config.highlightWhileReading.description": "Highlight and scroll to the sentence currently being read in the editor.",
+  "config.pronunciations.description": "Pronunciation overrides applied before speech synthesis. Keys are words (matched case-insensitively on word boundaries) or literal substrings; values are what gets spoken instead — e.g. `{ \"nginx\": \"engine x\", \"kubectl\": \"kube control\" }`. Put it in workspace settings to share a project dictionary with your team."
 }

@@ -1,7 +1,7 @@
 name: CI
 
-# Validates every push / PR to main: type-check, bundle, and confirm the flag
-# assets generate. Mirrors what the publish workflow does, minus the upload.
+# Validates every push / PR to main: type-check and bundle.
+# Mirrors what the publish workflow does, minus the upload.
 on:
   push:
     branches:
@@ -32,5 +32,3 @@ jobs:
       - name: Build (esbuild bundle)
         run: npm run build
 
-      - name: Generate flag assets
-        run: node scripts/copy-flags.mjs

@@ -29,16 +29,13 @@ jobs:
       - name: Type-check
         run: npm run typecheck
 
-      # Safety net: build + generate flag assets explicitly so a regression in the
-      # prepublish hook can't ship a broken/flagless VSIX. (vsce re-runs prepublish
-      # below, but failing fast here keeps a bad build from ever being published.)
+      # Safety net: build explicitly so a regression in the prepublish hook can't
+      # ship a broken VSIX. (vsce re-runs prepublish below, but failing fast here
+      # keeps a bad build from ever being published.)
       - name: Build (esbuild bundle)
         run: npm run build
 
-      - name: Generate flag assets
-        run: node scripts/copy-flags.mjs
-
-      # vsce runs the "vscode:prepublish" script (esbuild bundle + copy-flags)
+      # vsce runs the "vscode:prepublish" script (esbuild bundle)
       # automatically before packaging. --no-dependencies because esbuild already
       # bundles every runtime dep into dist/. --skip-duplicate makes a re-run of an
       # existing version a no-op instead of a hard failure.

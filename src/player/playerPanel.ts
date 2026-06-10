@@ -1,9 +1,18 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
-import type { Chunk, Gender, OutlineItem, ReadJob, TtsEngine } from '../types';
+import type { Gender, TtsEngine } from '../types';
 import { EdgeEngine } from '../engines/edgeEngine';
-import { detectLocale } from '../languageDetector';
-import { allCuratedLocales, curatedPair, displayName, getVoice, localeDisplay, pickVoice, voicesForLocale } from '../voices';
+import { renderMarkdownHtml } from '../markdown/render';
+import { normalizeForSpeech, applyPronunciations } from '../markdown/normalize';
+import { detectLocale, detectReliableLocale } from '../languageDetector';
+import {
+  allCuratedLocales,
+  curatedPair,
+  displayName,
+  getVoice,
+  localeDisplay,
+  pickVoice,
+  voicesForLocale,
+} from '../voices';
 
 function nonce(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -12,44 +21,92 @@ function nonce(): string {
   return s;
 }
 
+const FONT_FILES: Record<string, [string, number, 'normal' | 'italic']> = {
+  'inter-latin-400-normal.woff2': ['Inter', 400, 'normal'],
+  'inter-latin-500-normal.woff2': ['Inter', 500, 'normal'],
+  'inter-latin-600-normal.woff2': ['Inter', 600, 'normal'],
+  'inter-latin-700-normal.woff2': ['Inter', 700, 'normal'],
+  'literata-latin-400-normal.woff2': ['Literata', 400, 'normal'],
+  'literata-latin-400-italic.woff2': ['Literata', 400, 'italic'],
+  'literata-latin-600-normal.woff2': ['Literata', 600, 'normal'],
+  'literata-latin-700-normal.woff2': ['Literata', 700, 'normal'],
+  'atkinson-hyperlegible-latin-400-normal.woff2': ['Atkinson Hyperlegible', 400, 'normal'],
+  'atkinson-hyperlegible-latin-400-italic.woff2': ['Atkinson Hyperlegible', 400, 'italic'],
+  'atkinson-hyperlegible-latin-700-normal.woff2': ['Atkinson Hyperlegible', 700, 'normal'],
+  'ibm-plex-mono-latin-400-normal.woff2': ['IBM Plex Mono', 400, 'normal'],
+  'ibm-plex-mono-latin-500-normal.woff2': ['IBM Plex Mono', 500, 'normal'],
+};
+
+const POSITIONS_KEY = 'markdownReadAloud.positions';
+const PREFS_KEY = 'markdownReadAloud.readerPrefs';
+const MAX_POSITIONS = 24;
+
+interface StoredPosition {
+  idx: number;
+  total: number;
+  text: string;
+  ts: number;
+}
+
+export interface OpenOptions {
+  docUri?: vscode.Uri;
+  /** character offset in `source` to start reading from (read-from-cursor) */
+  startOffset?: number;
+  isSelection?: boolean;
+  /** 1-based line in the original document where `source` starts (selection reads) */
+  baseLine?: number;
+}
+
+/**
+ * The reader webview: renders the Markdown document as clean prose and reads it
+ * aloud with sentence-synced highlighting. The webview owns segmentation and
+ * playback; this host renders the HTML and answers per-sentence synthesis
+ * requests with Edge neural voices (eld picks the language per sentence).
+ *
+ * Kept the class name + `current`/`control()` so the command layer is unchanged.
+ */
 export class PlayerPanel {
   static current: PlayerPanel | undefined;
-  private static readonly viewType = 'markdownReadAloud.player';
+  private static readonly viewType = 'markdownReadAloud.reader';
+  private static status: vscode.StatusBarItem | undefined;
 
   private readonly panel: vscode.WebviewPanel;
   private readonly extensionUri: vscode.Uri;
+  private readonly context: vscode.ExtensionContext;
   private disposables: vscode.Disposable[] = [];
+  private disposed = false;
 
   private engine: TtsEngine = new EdgeEngine();
   private engineId: 'edge' | 'browser' = 'edge';
-  private job?: ReadJob;
-  private docUri?: vscode.Uri;
-  private currentVoice = '';
-  private gender: Gender = 'female';
-  private activeLocale = ''; // language the voice picker / gender toggle operate on
-  private autoLang = true; // auto per-paragraph language switching (vs. one fixed voice)
-
-  private generation = 0; // bumped on new job / voice change to discard stale synths
-  private playingIndex = 0; // last sentence the webview reported playing (for warm pre-synth)
-  private hadSuccess = false; // have we ever gotten audio from Edge this session?
   private supertonicWarned = false;
 
-  private cache = new Map<number, ArrayBuffer>();
-  private inflight = new Map<number, Promise<void>>();
+  private docLocale = 'en-US';
+  private activeLocale = 'en-US'; // language the manual voice/locale picker operates on
+  private currentVoice = '';
+  private gender: Gender = 'female';
+  private autoLang = true; // detect language per sentence (vs. one fixed voice)
 
-  private decoration = vscode.window.createTextEditorDecorationType({
-    backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
-    borderRadius: '2px',
-    overviewRulerColor: new vscode.ThemeColor('editorOverviewRuler.findMatchForeground'),
-    overviewRulerLane: vscode.OverviewRulerLane.Center,
-  });
+  private docUri: vscode.Uri | undefined;
+  private docTitle = '';
+  private baseLine = 1;
+  private isSelection = false;
+  private lastLoad: any = null;
+  private readyCount = 0;
 
-  static show(extensionUri: vscode.Uri): PlayerPanel {
+  private generation = 0; // bumped on voice/lang/gender change to discard stale synths
+  private hadSuccess = false; // have we ever gotten audio from Edge this session?
+
+  private cache = new Map<string, ArrayBuffer>(); // key: voice|locale|cleanText
+  private inflight = new Map<string, Promise<void>>();
+
+  static show(context: vscode.ExtensionContext): PlayerPanel {
     const column = vscode.ViewColumn.Beside;
     if (PlayerPanel.current) {
       PlayerPanel.current.panel.reveal(column, true);
       return PlayerPanel.current;
     }
+    const roots = [vscode.Uri.joinPath(context.extensionUri, 'media')];
+    for (const f of vscode.workspace.workspaceFolders ?? []) roots.push(f.uri);
     const panel = vscode.window.createWebviewPanel(
       PlayerPanel.viewType,
       vscode.l10n.t('Read Aloud'),
@@ -57,62 +114,107 @@ export class PlayerPanel {
       {
         enableScripts: true,
         retainContextWhenHidden: true,
-        localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')],
+        localResourceRoots: roots,
       }
     );
-    PlayerPanel.current = new PlayerPanel(panel, extensionUri);
+    PlayerPanel.current = new PlayerPanel(panel, context);
     return PlayerPanel.current;
   }
 
-  private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
+  private constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
     this.panel = panel;
-    this.extensionUri = extensionUri;
+    this.context = context;
+    this.extensionUri = context.extensionUri;
     const cfg = vscode.workspace.getConfiguration('markdownReadAloud');
     this.gender = cfg.get<Gender>('preferredGender', 'female');
-    this.engineId = this.resolveEngine(cfg);
-
+    this.autoLang = cfg.get<boolean>('perParagraphLanguage', false);
     this.panel.webview.html = this.getHtml(this.panel.webview);
-    this.panel.iconPath = undefined;
     this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
     this.panel.webview.onDidReceiveMessage((m) => this.onMessage(m), null, this.disposables);
+    // live re-render while the source document is edited (like the built-in preview)
+    vscode.workspace.onDidChangeTextDocument((e) => this.onDocChanged(e), null, this.disposables);
   }
 
-  // ---- public API used by commands ----------------------------------------
+  private updateTimer: NodeJS.Timeout | undefined;
 
-  async startJob(job: ReadJob, startIndex: number) {
-    this.job = job;
-    this.docUri = vscode.Uri.parse(job.docUri);
+  private onDocChanged(e: vscode.TextDocumentChangeEvent) {
+    if (!this.docUri || this.isSelection || !this.lastLoad) return;
+    if (e.document.uri.toString() !== this.docUri.toString()) return;
+    if (this.updateTimer) clearTimeout(this.updateTimer);
+    this.updateTimer = setTimeout(() => {
+      this.updateTimer = undefined;
+      if (this.disposed || !this.docUri) return;
+      const html = renderMarkdownHtml(e.document.getText());
+      this.lastLoad.html = html; // keep iframe-reload resends fresh
+      this.post({ type: 'update', html });
+    }, 400);
+  }
+
+  // ---- public API used by the commands ------------------------------------
+
+  /** Render a document (or selection) into the reader and start it. */
+  open(source: string, title: string, opts: OpenOptions = {}) {
+    const cfg = vscode.workspace.getConfiguration('markdownReadAloud');
+    const fallback = cfg.get<string>('fallbackLanguage', 'en-US');
+    const autoDetect = cfg.get<boolean>('autoDetectLanguage', true);
+    this.gender = cfg.get<Gender>('preferredGender', 'female');
+    this.autoLang = cfg.get<boolean>('perParagraphLanguage', false);
+    this.engineId = this.resolveEngine(cfg);
+    this.docLocale = autoDetect ? detectLocale(source, fallback).locale : fallback;
+    this.activeLocale = this.docLocale;
+    this.currentVoice = pickVoice(this.docLocale, this.gender, this.overrides());
     this.generation++;
     this.hadSuccess = false;
-    this.cache.clear();
     this.inflight.clear();
 
-    const cfg = vscode.workspace.getConfiguration('markdownReadAloud');
-    const overrides = cfg.get<Record<string, string>>('voiceOverrides', {});
-    this.gender = cfg.get<Gender>('preferredGender', 'female');
-    this.engineId = this.resolveEngine(cfg); // re-resolve so a new read retries Edge after a fallback
-    this.autoLang = cfg.get<boolean>('perParagraphLanguage', false);
-    this.activeLocale = job.locale;
-    this.currentVoice = pickVoice(job.locale, this.gender, overrides);
-    const rate = cfg.get<number>('speed', 1);
-    const volume = cfg.get<number>('volume', 1);
+    this.docUri = opts.docUri;
+    this.docTitle = title;
+    this.baseLine = opts.baseLine ?? 1;
+    this.isSelection = !!opts.isSelection;
 
-    this.panel.title = `▶ ${job.title}`;
+    const docKey = opts.docUri && !opts.isSelection ? opts.docUri.toString() : '';
+    const anchorText = typeof opts.startOffset === 'number' ? anchorFrom(source, opts.startOffset) : undefined;
+    const resume = docKey && !anchorText ? this.positions()[docKey] : undefined;
+
+    let baseHref = '';
+    if (opts.docUri) {
+      try {
+        baseHref = this.panel.webview.asWebviewUri(vscode.Uri.joinPath(opts.docUri, '..')).toString() + '/';
+      } catch {
+        /* untitled or virtual documents have no folder */
+      }
+    }
+
+    const html = renderMarkdownHtml(source);
+    this.panel.title = title;
     this.panel.reveal(vscode.ViewColumn.Beside, true);
-    this.post({
+    this.lastLoad = {
       type: 'load',
-      startIndex,
+      html,
+      title,
+      docKey,
+      baseHref,
       engine: this.engineId,
-      rate,
-      volume,
-      flagsBase: this.panel.webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'flags')).toString(),
-      job: this.serializeJob(job),
-    });
+      rate: cfg.get<number>('speed', 1),
+      volume: cfg.get<number>('volume', 1),
+      settings: {
+        codeBlocks: cfg.get<string>('codeBlocks', 'announce'),
+        tables: cfg.get<string>('tables', 'skip'),
+        announceHeadings: cfg.get<boolean>('announceHeadings', false),
+        highlight: cfg.get<boolean>('highlightWhileReading', true),
+      },
+      prefs: this.context.globalState.get(PREFS_KEY) ?? null,
+      resume: resume ? { idx: resume.idx, total: resume.total, text: resume.text } : null,
+      anchorText: anchorText ?? null,
+      autoplay: true,
+      ...this.voiceUiPayload(),
+    };
+    this.post(this.lastLoad);
+    this.updateStatus(false);
   }
 
   control(action: 'playpause' | 'stop') {
     this.post({ type: 'control', action });
-    if (action === 'stop') this.clearHighlight();
   }
 
   // ---- message handling ----------------------------------------------------
@@ -120,79 +222,176 @@ export class PlayerPanel {
   private async onMessage(m: any) {
     switch (m?.type) {
       case 'ready':
-        // webview reloaded (e.g. after being hidden) — nothing to push proactively
+        // the first 'ready' is the initial page load (its 'load' message is buffered
+        // by VS Code); later ones mean the webview iframe was reloaded — re-send.
+        this.readyCount++;
+        if (this.readyCount > 1 && this.lastLoad) this.post(this.lastLoad);
         break;
-      case 'needChunk':
-        await this.provideChunk(m.index);
-        break;
-      case 'nowPlaying':
-        this.playingIndex = m.index;
-        this.highlight(m.index);
-        break;
-      case 'ended':
-        this.clearHighlight();
-        this.panel.title = this.job ? this.job.title : vscode.l10n.t('Read Aloud');
+      case 'synth':
+        await this.provideSynth(m.id, String(m.text || ''), Number(m.gen) || 0);
         break;
       case 'setGender':
-        this.changeGender(m.gender);
-        break;
-      case 'setVoice':
-        this.changeVoice(m.shortName);
-        break;
-      case 'setLocale':
-        this.changeLocale(m.locale);
-        break;
-      case 'detectLanguage':
-        this.detectLanguage();
+        this.changeGender(m.gender === 'male' ? 'male' : 'female');
         break;
       case 'setAutoLang':
         this.setAutoLang(!!m.value);
         break;
-      case 'persistSpeed':
-        await vscode.workspace
-          .getConfiguration('markdownReadAloud')
-          .update('speed', m.value, vscode.ConfigurationTarget.Global);
+      case 'setLocale':
+        this.changeLocale(String(m.locale || this.activeLocale));
         break;
-      case 'persistVolume':
-        await vscode.workspace
-          .getConfiguration('markdownReadAloud')
-          .update('volume', m.value, vscode.ConfigurationTarget.Global);
+      case 'setVoice':
+        this.changeVoice(String(m.shortName || ''));
         break;
+      case 'position':
+        this.savePosition(m);
+        break;
+      case 'playState':
+        this.updateStatus(!!m.playing);
+        break;
+      case 'openSource':
+      case 'editSource':
+        await this.revealSource(Number(m.line) || 1);
+        break;
+      case 'persistPrefs':
+        if (m.prefs && typeof m.prefs === 'object') {
+          void this.context.globalState.update(PREFS_KEY, m.prefs);
+        }
+        break;
+      case 'persistSpeed': {
+        const n = Number(m.value);
+        if (!Number.isFinite(n)) break;
+        const v = Math.min(2.5, Math.max(0.5, n));
+        await vscode.workspace.getConfiguration('markdownReadAloud').update('speed', v, vscode.ConfigurationTarget.Global);
+        break;
+      }
+      case 'persistVolume': {
+        const n = Number(m.value);
+        if (!Number.isFinite(n)) break;
+        const v = Math.min(1, Math.max(0, n));
+        await vscode.workspace.getConfiguration('markdownReadAloud').update('volume', v, vscode.ConfigurationTarget.Global);
+        break;
+      }
     }
   }
 
-  private async provideChunk(index: number) {
-    if (!this.job || index < 0 || index >= this.job.chunks.length) return;
+  private resolveEngine(cfg: vscode.WorkspaceConfiguration): 'edge' | 'browser' {
+    const eng = cfg.get<string>('engine', 'edge');
+    if (eng === 'browser') return 'browser';
+    if (eng === 'supertonic' && !this.supertonicWarned) {
+      this.supertonicWarned = true;
+      vscode.window.showInformationMessage(
+        vscode.l10n.t('Read Aloud: the offline Supertonic engine is coming in a later update — using Edge neural voices for now.')
+      );
+    }
+    return 'edge';
+  }
+
+  // ---- per-document resume -------------------------------------------------
+
+  private positions(): Record<string, StoredPosition> {
+    return this.context.workspaceState.get<Record<string, StoredPosition>>(POSITIONS_KEY, {});
+  }
+
+  private savePosition(m: any) {
+    const key = typeof m.docKey === 'string' ? m.docKey : '';
+    if (!key) return;
+    const all = { ...this.positions() };
+    all[key] = { idx: Number(m.idx) || 0, total: Number(m.total) || 0, text: String(m.text || '').slice(0, 80), ts: Date.now() };
+    const keys = Object.keys(all);
+    if (keys.length > MAX_POSITIONS) {
+      keys.sort((a, b) => all[a].ts - all[b].ts);
+      for (const k of keys.slice(0, keys.length - MAX_POSITIONS)) delete all[k];
+    }
+    void this.context.workspaceState.update(POSITIONS_KEY, all);
+  }
+
+  // ---- status bar mini-player ----------------------------------------------
+
+  private updateStatus(playing: boolean) {
+    if (!PlayerPanel.status) {
+      PlayerPanel.status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+      PlayerPanel.status.command = 'markdownReadAloud.togglePlayPause';
+      this.context.subscriptions.push(PlayerPanel.status);
+    }
+    const t = this.docTitle.length > 24 ? this.docTitle.slice(0, 23) + '…' : this.docTitle;
+    PlayerPanel.status.text = `${playing ? '$(debug-pause)' : '$(play)'} ${t}`;
+    PlayerPanel.status.tooltip = vscode.l10n.t('Read Aloud — click to play/pause');
+    PlayerPanel.status.show();
+    this.panel.title = playing ? `▶ ${this.docTitle}` : this.docTitle;
+  }
+
+  // ---- jump to source (Alt+Click) -------------------------------------------
+
+  private async revealSource(line: number) {
+    if (!this.docUri) return;
+    try {
+      const doc = await vscode.workspace.openTextDocument(this.docUri);
+      const ln = Math.max(0, Math.min(doc.lineCount - 1, this.baseLine - 1 + line - 1));
+      const editor = await vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.One, preserveFocus: false });
+      const range = doc.lineAt(ln).range;
+      editor.selection = new vscode.Selection(range.start, range.start);
+      editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+    } catch {
+      /* document may be gone */
+    }
+  }
+
+  // ---- synthesis -------------------------------------------------------------
+
+  /** Synthesize one sentence on demand. The webview supplies the text, a stable id
+   *  and its load generation (echoed back so late audio from a previous doc is dropped). */
+  private async provideSynth(id: number, text: string, loadGen: number) {
     if (this.engineId === 'browser') return; // webview synthesizes locally
-    if (this.cache.has(index)) {
-      this.sendAudio(index, this.cache.get(index)!);
+    const cfg = vscode.workspace.getConfiguration('markdownReadAloud');
+    const clean = applyPronunciations(
+      normalizeForSpeech(text),
+      cfg.get<Record<string, string>>('pronunciations', {})
+    );
+    if (!clean) {
+      this.post({ type: 'audioError', id, gen: loadGen });
       return;
     }
-    if (this.inflight.has(index)) return;
-
-    const gen = this.generation;
-    const chunk = this.job.chunks[index];
+    let locale: string;
     let voice: string;
-    let loc: string;
     if (this.autoLang) {
-      loc = chunk.locale || this.job.locale;
-      voice = pickVoice(loc, this.gender, this.overrides());
+      locale = detectReliableLocale(text) || this.docLocale;
+      voice = pickVoice(locale, this.gender, this.overrides());
     } else {
-      loc = this.activeLocale;
+      locale = this.activeLocale;
       voice = this.currentVoice;
+    }
+    const key = `${voice}|${locale}|${clean}`;
+
+    const cached = this.cache.get(key);
+    if (cached) {
+      this.sendAudio(id, cached, loadGen, locale);
+      return;
+    }
+    const gen = this.generation;
+    if (this.inflight.has(key)) {
+      this.inflight.get(key)!.then(() => {
+        if (gen !== this.generation) return;
+        const ab = this.cache.get(key);
+        if (ab) this.sendAudio(id, ab, loadGen, locale);
+        else this.post({ type: 'audioError', id, gen: loadGen });
+      });
+      return;
     }
     const task = (async () => {
       try {
-        const buf = await this.engine.synth(chunk.text, voice, loc);
-        if (gen !== this.generation) return; // superseded by a voice change / new job
+        const buf = await this.engine.synth(clean, voice, locale);
         const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
         this.hadSuccess = true;
-        this.cache.set(index, ab);
-        this.sendAudio(index, ab);
+        this.cache.set(key, ab);
+        // FIFO cap so long multi-document sessions don't grow without bound
+        if (this.cache.size > 600) {
+          const oldest = this.cache.keys().next().value;
+          if (oldest) this.cache.delete(oldest);
+        }
+        if (gen === this.generation) this.sendAudio(id, ab, loadGen, locale);
       } catch (err: any) {
-        if (gen !== this.generation) return; // stale error from a superseded synth — ignore
+        if (gen !== this.generation) return;
         if (this.engineId === 'edge' && !this.hadSuccess) {
-          // Never reached the endpoint at all this session → likely offline.
           this.engineId = 'browser';
           vscode.window.showWarningMessage(
             vscode.l10n.t(
@@ -202,61 +401,33 @@ export class PlayerPanel {
           );
           this.post({ type: 'engineFallback', engine: 'browser' });
         } else {
-          // Transient failure mid-document → skip just this sentence.
-          this.post({ type: 'audioError', index, message: String(err?.message || err) });
+          this.post({ type: 'audioError', id, gen: loadGen, message: String(err?.message || err) });
         }
       } finally {
-        this.inflight.delete(index);
+        this.inflight.delete(key);
       }
     })();
-    this.inflight.set(index, task);
+    this.inflight.set(key, task);
     await task;
   }
 
-  private resolveEngine(cfg: vscode.WorkspaceConfiguration): 'edge' | 'browser' {
-    const choice = cfg.get<string>('engine', 'edge');
-    if (choice === 'browser') return 'browser';
-    if (choice === 'supertonic' && !this.supertonicWarned) {
-      this.supertonicWarned = true;
-      vscode.window.showInformationMessage(
-        vscode.l10n.t(
-          'Read Aloud: the offline Supertonic engine is coming in a later update — using Edge neural voices for now.'
-        )
-      );
-    }
-    return 'edge';
-  }
-
-  private sendAudio(index: number, ab: ArrayBuffer) {
-    this.post({ type: 'audio', index, mime: this.engine.mime, bytes: ab });
+  private sendAudio(id: number, ab: ArrayBuffer, gen: number, locale: string) {
+    this.post({ type: 'audio', id, gen, locale, mime: this.engine.mime, bytes: ab });
   }
 
   private overrides(): Record<string, string> {
     return vscode.workspace.getConfiguration('markdownReadAloud').get<Record<string, string>>('voiceOverrides', {});
   }
 
-  /** Drop cached audio, invalidate in-flight synths, refresh the UI; the next
-   *  chunk requests pick up the new voice/language/gender state. */
   private invalidateAndRefresh() {
     this.generation++;
-    this.cache.clear();
-    this.inflight.clear();
     this.post({ type: 'voiceUi', ...this.voiceUiPayload() });
-    // Warm the connection and pre-synthesize the current sentence (and the next)
-    // for the new voice right now, in parallel with the webview round-trip, so
-    // playback resumes with minimal delay instead of starting a cold synth only
-    // after the webview asks for the chunk.
-    if (this.engineId === 'edge' && this.job) {
-      void this.provideChunk(this.playingIndex);
-      void this.provideChunk(this.playingIndex + 1);
-    }
   }
 
-  /** Toggle automatic per-paragraph language switching vs. one fixed voice. */
   private setAutoLang(on: boolean) {
     this.autoLang = on;
-    if (on && this.job) {
-      this.activeLocale = this.job.locale;
+    if (on) {
+      this.activeLocale = this.docLocale;
       this.currentVoice = pickVoice(this.activeLocale, this.gender, this.overrides());
     }
     void vscode.workspace
@@ -265,7 +436,6 @@ export class PlayerPanel {
     this.invalidateAndRefresh();
   }
 
-  /** Switch ♀/♂ — keeps the current mode; the gender applies to every paragraph. */
   private changeGender(gender: Gender) {
     this.gender = gender;
     if (!this.autoLang) this.currentVoice = pickVoice(this.activeLocale, gender, this.overrides());
@@ -275,7 +445,6 @@ export class PlayerPanel {
     this.invalidateAndRefresh();
   }
 
-  /** Manually choose a language (turns OFF auto per-paragraph). */
   private changeLocale(locale: string) {
     this.autoLang = false;
     this.activeLocale = locale;
@@ -283,24 +452,15 @@ export class PlayerPanel {
     this.invalidateAndRefresh();
   }
 
-  /** Manually choose a specific voice (turns OFF auto per-paragraph). */
   private changeVoice(shortName: string) {
     const v = getVoice(shortName);
     this.autoLang = false;
-    this.gender = v && v.gender.toLowerCase() === 'male' ? 'male' : 'female';
-    this.activeLocale = v ? v.locale : this.activeLocale;
+    if (v) {
+      this.gender = v.gender.toLowerCase() === 'male' ? 'male' : 'female';
+      this.activeLocale = v.locale;
+    }
     this.currentVoice = shortName;
     this.invalidateAndRefresh();
-  }
-
-  /** (Manual mode) detect the document's dominant language and switch to it. */
-  private detectLanguage() {
-    if (!this.job) return;
-    const fallback = vscode.workspace.getConfiguration('markdownReadAloud').get<string>('fallbackLanguage', 'en-US');
-    const text = this.job.chunks.map((c) => c.text).join(' ').slice(0, 3000);
-    const det = detectLocale(text, fallback);
-    this.changeLocale(det.locale);
-    vscode.window.setStatusBarMessage(vscode.l10n.t('Read Aloud: detected {0}', localeDisplay(det.locale)), 3000);
   }
 
   /** Everything the webview needs to render the voice/language controls. */
@@ -310,7 +470,7 @@ export class PlayerPanel {
       autoLang: this.autoLang,
       locale: this.activeLocale,
       localeName: localeDisplay(this.activeLocale),
-      languages: this.job ? this.job.languages.map((l) => ({ locale: l, name: localeDisplay(l) })) : [],
+      locales: allCuratedLocales(),
       voicePair: {
         female: pair.female ? { shortName: pair.female, name: displayName(pair.female) } : undefined,
         male: pair.male ? { shortName: pair.male, name: displayName(pair.male) } : undefined,
@@ -327,49 +487,12 @@ export class PlayerPanel {
     };
   }
 
-  // ---- highlighting --------------------------------------------------------
-
-  private highlight(index: number) {
-    if (!this.job || !this.docUri) return;
-    if (!vscode.workspace.getConfiguration('markdownReadAloud').get('highlightWhileReading', true)) return;
-    const chunk = this.job.chunks[index];
-    if (!chunk) return;
-    const editor = vscode.window.visibleTextEditors.find(
-      (e) => e.document.uri.toString() === this.docUri!.toString()
-    );
-    if (!editor) return;
-    const start = editor.document.positionAt(chunk.blockStartOffset);
-    const end = editor.document.positionAt(chunk.blockEndOffset);
-    const range = new vscode.Range(start, end);
-    editor.setDecorations(this.decoration, [range]);
-    editor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
-  }
-
-  private clearHighlight() {
-    if (!this.docUri) return;
-    const editor = vscode.window.visibleTextEditors.find(
-      (e) => e.document.uri.toString() === this.docUri!.toString()
-    );
-    editor?.setDecorations(this.decoration, []);
-  }
-
-  // ---- serialization for the webview --------------------------------------
-
-  private serializeJob(job: ReadJob) {
-    return {
-      title: job.title,
-      chunks: job.chunks.map((c: Chunk) => ({ index: c.index, text: c.text, kind: c.kind })),
-      outline: job.outline,
-      locales: allCuratedLocales(),
-      ...this.voiceUiPayload(),
-    };
-  }
-
   private post(message: any) {
-    this.panel.webview.postMessage(message);
+    if (this.disposed) return;
+    void this.panel.webview.postMessage(message);
   }
 
-  /** Localized UI strings injected into the webview, where vscode.l10n is unavailable.
+  /** Localized UI strings injected into the webview (vscode.l10n is host-only).
    *  Calls must use the literal vscode.l10n.t() form so @vscode/l10n-dev can extract them. */
   private uiStrings(): Record<string, string> {
     return {
@@ -379,45 +502,79 @@ export class PlayerPanel {
       stop: vscode.l10n.t('Stop'),
       prev: vscode.l10n.t('Previous sentence'),
       next: vscode.l10n.t('Next sentence'),
-      seek: vscode.l10n.t('Seek'),
-      slower: vscode.l10n.t('Slower'),
-      faster: vscode.l10n.t('Faster'),
       speed: vscode.l10n.t('Speed'),
+      volume: vscode.l10n.t('Volume'),
       mute: vscode.l10n.t('Mute'),
       unmute: vscode.l10n.t('Unmute'),
-      volume: vscode.l10n.t('Volume'),
       female: vscode.l10n.t('Female'),
       male: vscode.l10n.t('Male'),
       voice: vscode.l10n.t('Voice'),
       language: vscode.l10n.t('Language'),
-      sections: vscode.l10n.t('Sections'),
-      autoLabel: vscode.l10n.t('Auto'),
       autoLangLabel: vscode.l10n.t('Auto language (per paragraph)'),
-      languageAndVoices: vscode.l10n.t('Language & all voices'),
-      detect: vscode.l10n.t('Detect'),
-      detectTooltip: vscode.l10n.t("Detect the document's language and switch to it"),
       multilingual: vscode.l10n.t('multilingual'),
-      sentencesOne: vscode.l10n.t('{0} sentence'),
-      sentencesOther: vscode.l10n.t('{0} sentences'),
-      estSeconds: vscode.l10n.t('~{0} s'),
-      estMinutes: vscode.l10n.t('~{0} min'),
-      autoPrefix: vscode.l10n.t('Auto: {0}'),
+      readingFont: vscode.l10n.t('Reading font'),
+      comfort: vscode.l10n.t('Comfort'),
+      compact: vscode.l10n.t('Compact'),
+      cozy: vscode.l10n.t('Cozy'),
+      wide: vscode.l10n.t('Wide'),
+      theme: vscode.l10n.t('Theme'),
+      themeAuto: vscode.l10n.t('Follow VS Code'),
+      themeStudy: vscode.l10n.t('Study'),
+      themeDaylight: vscode.l10n.t('Daylight'),
+      themePaper: vscode.l10n.t('Paper'),
+      ambient: vscode.l10n.t('Ambient focus'),
+      badges: vscode.l10n.t('Show language badges'),
+      readSection: vscode.l10n.t('Read section'),
+      settings: vscode.l10n.t('More settings'),
+      reading: vscode.l10n.t('Reading'),
+      playback: vscode.l10n.t('Playback'),
+      minShort: vscode.l10n.t('~{0} min'),
+      edit: vscode.l10n.t('Edit source'),
+      collapseAll: vscode.l10n.t('Collapse all sections'),
+      expandAll: vscode.l10n.t('Expand all sections'),
+      toggleSection: vscode.l10n.t('Toggle section'),
+      backToReading: vscode.l10n.t('Back to reading'),
+      startOver: vscode.l10n.t('Start over'),
+      resumed: vscode.l10n.t('Resumed where you left off'),
+      sleepTimer: vscode.l10n.t('Sleep timer'),
+      off: vscode.l10n.t('Off'),
+      untilSectionEnd: vscode.l10n.t('Until end of section'),
+      codeBlock: vscode.l10n.t('Code block'),
+      heading: vscode.l10n.t('Heading'),
+      sentenceOf: vscode.l10n.t('Sentence {0} of {1}'),
+      progress: vscode.l10n.t('Progress'),
+      nothingToRead: vscode.l10n.t('Nothing readable in this document.'),
+      openInEditor: vscode.l10n.t('Alt+Click a sentence to open it in the editor'),
+      fontSerifSub: vscode.l10n.t('warm serif'),
+      fontSansSub: vscode.l10n.t('clean sans'),
+      fontA11ySub: vscode.l10n.t('max legibility'),
+      fontMonoSub: vscode.l10n.t('calm, technical'),
     };
+  }
+
+  private fontFaceCss(webview: vscode.Webview): string {
+    const base = vscode.Uri.joinPath(this.extensionUri, 'media', 'fonts');
+    return Object.entries(FONT_FILES)
+      .map(([file, [family, weight, style]]) => {
+        const uri = webview.asWebviewUri(vscode.Uri.joinPath(base, file));
+        return `@font-face{font-family:'${family}';font-style:${style};font-weight:${weight};font-display:swap;src:url(${uri}) format('woff2');}`;
+      })
+      .join('\n');
   }
 
   private getHtml(webview: vscode.Webview): string {
     const n = nonce();
     const L = this.uiStrings();
     const esc = (s: string) =>
-      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const l10nBlob = JSON.stringify(L).replace(/</g, '\\u003c');
     const uiLang = vscode.env.language || 'en';
-    const js = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'player.js'));
-    const css = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'player.css'));
+    const js = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'reader.js'));
+    const css = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'reader.css'));
     const csp = [
       `default-src 'none'`,
       `media-src blob: data:`,
-      `img-src ${webview.cspSource}`,
+      `img-src ${webview.cspSource} https: blob: data:`,
       `style-src ${webview.cspSource} 'unsafe-inline'`,
       `script-src 'nonce-${n}'`,
       `font-src ${webview.cspSource}`,
@@ -429,78 +586,13 @@ export class PlayerPanel {
 <meta charset="UTF-8" />
 <meta http-equiv="Content-Security-Policy" content="${csp}" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>${this.fontFaceCss(webview)}</style>
 <link href="${css}" rel="stylesheet" />
 <title>${esc(L.title)}</title>
 </head>
-<body>
-  <div id="app">
-    <div id="head">
-      <div id="title">${esc(L.title)}</div>
-      <div id="lang"></div>
-    </div>
-
-    <section class="panel" id="panel-screen">
-      <div id="transcript"><div id="lines"></div></div>
-    </section>
-    <div id="sr" class="sr-only" aria-live="polite"></div>
-
-    <section class="panel" id="panel-transport">
-      <div id="progress">
-        <input id="scrub" type="range" min="0" max="1000" value="0" step="1" aria-label="${esc(L.seek)}" />
-        <div id="times"><span id="time-cur">0:00</span><span id="time-total">0:00</span></div>
-      </div>
-
-      <div id="transport">
-        <button id="prev" class="ghost" title="${esc(L.prev)}" aria-label="${esc(L.prev)}"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5v14h2V5H6zm3 7l9 7V5l-9 7z"/></svg></button>
-        <div class="key-well"><button id="play" class="key" aria-pressed="false" aria-label="${esc(L.play)}"><span class="glyph"><svg class="tri" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><svg class="bars" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></span></button></div>
-        <button id="stop" class="ghost" title="${esc(L.stop)}" aria-label="${esc(L.stop)}"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></button>
-        <button id="next" class="ghost" title="${esc(L.next)}" aria-label="${esc(L.next)}"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5v14h2V5h-2zM15 12L6 5v14l9-7z"/></svg></button>
-      </div>
-    </section>
-
-    <section class="panel" id="panel-settings">
-      <div id="meta">
-        <div id="gender-toggle" class="pill">
-          <button data-gender="female" id="g-female">♀ <span id="g-female-name">${esc(L.female)}</span></button>
-          <button data-gender="male" id="g-male">♂ <span id="g-male-name">${esc(L.male)}</span></button>
-        </div>
-      </div>
-
-      <div id="speedwrap" class="sliderrow">
-        <button id="speed-down" class="spd-btn" title="${esc(L.slower)}" aria-label="${esc(L.slower)}"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="11" width="14" height="2" rx="1"/></svg></button>
-        <input id="speed" type="range" min="0.5" max="2.5" value="1" step="0.05" aria-label="${esc(L.speed)}" />
-        <span id="speed-val">1.0×</span>
-        <button id="speed-up" class="spd-btn" title="${esc(L.faster)}" aria-label="${esc(L.faster)}"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg></button>
-      </div>
-
-      <div id="volrow" class="sliderrow">
-        <button id="mute" class="vol-btn" title="${esc(L.mute)}" aria-label="${esc(L.mute)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path class="spk" d="M4 9.5v5h3.5L12 18V6L7.5 9.5H4z" fill="currentColor" stroke="none"/><path class="wave wave1" d="M15.5 9.8a3.3 3.3 0 010 4.4"/><path class="wave wave2" d="M18 7.4a6.5 6.5 0 010 9.2"/><path class="slash" d="M3.5 3.5l17 17"/></svg></button>
-        <input id="volume" type="range" min="0" max="1" step="0.01" value="1" aria-label="${esc(L.volume)}" />
-        <span id="vol-val">100%</span>
-      </div>
-
-      <details id="advanced">
-        <summary>${esc(L.languageAndVoices)}</summary>
-        <div class="advanced-body">
-          <label class="check"><input type="checkbox" id="auto-lang" /> ${esc(L.autoLangLabel)}</label>
-          <label class="adv-label" for="lang-button">${esc(L.language)}</label>
-          <div class="lang-row">
-            <div class="lang-combo" id="lang-combo">
-              <button type="button" id="lang-button" class="lang-button" aria-haspopup="listbox" aria-expanded="false" aria-label="${esc(L.language)}"><span class="lang-flag" id="lang-button-flag"></span><span class="lang-label" id="lang-button-label">${esc(L.autoLabel)}</span><svg class="lang-caret" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg></button>
-              <ul class="lang-list" id="lang-list" role="listbox" tabindex="-1" hidden></ul>
-            </div>
-            <button id="detect-lang" class="detect-btn" title="${esc(L.detectTooltip)}">⤿ ${esc(L.detect)}</button>
-          </div>
-          <label class="adv-label" for="voice-select">${esc(L.voice)}</label>
-          <select id="voice-select"></select>
-        </div>
-      </details>
-    </section>
-
-    <section class="panel" id="outline-panel">
-      <div id="outline"></div>
-    </section>
-  </div>
+<body class="hide-badges">
+  <div id="app"></div>
+  <div id="sr" class="sr-only" role="status" aria-live="polite"></div>
   <script nonce="${n}">window.__l10n=${l10nBlob};window.__uiLocale=${JSON.stringify(uiLang)};</script>
   <script nonce="${n}" src="${js}"></script>
 </body>
@@ -508,11 +600,29 @@ export class PlayerPanel {
   }
 
   dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    if (this.updateTimer) clearTimeout(this.updateTimer);
     PlayerPanel.current = undefined;
-    this.clearHighlight();
-    this.decoration.dispose();
+    PlayerPanel.status?.hide();
     this.engine.dispose();
     this.panel.dispose();
     while (this.disposables.length) this.disposables.pop()?.dispose();
   }
+}
+
+/** Plain-text anchor for "read from cursor": the first prose-looking line at/after the offset. */
+function anchorFrom(source: string, offset: number): string | undefined {
+  const rest = source.slice(Math.max(0, Math.min(source.length, offset)));
+  for (const raw of rest.split('\n').slice(0, 40)) {
+    const plain = raw
+      .replace(/`{3,}.*/g, ' ')
+      .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/[#>*_`~|]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const words = plain.match(/[\p{L}\p{N}']+/gu) || [];
+    if (words.length >= 3) return plain.slice(0, 80);
+  }
+  return undefined;
 }

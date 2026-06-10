@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { PlayerPanel } from './player/playerPanel';
-import { buildJob, chunkIndexForOffset, titleFor } from './reader';
+import { titleFor } from './reader';
 
 export function activate(context: vscode.ExtensionContext) {
   const reg = (id: string, fn: (...a: any[]) => any) =>
@@ -12,9 +12,9 @@ export function activate(context: vscode.ExtensionContext) {
   reg('markdownReadAloud.stop', () => PlayerPanel.current?.control('stop'));
   reg('markdownReadAloud.togglePlayPause', () => {
     if (PlayerPanel.current) PlayerPanel.current.control('playpause');
-    else vscode.window.showInformationMessage(vscode.l10n.t('Read Aloud: no active player. Run "Read Aloud: Read from Cursor" to start.'));
+    else vscode.window.showInformationMessage(vscode.l10n.t('Read Aloud: no active player. Run "Read Aloud: Read Document" to start.'));
   });
-  reg('markdownReadAloud.openPlayer', () => PlayerPanel.show(context.extensionUri));
+  reg('markdownReadAloud.openPlayer', () => readDocument(context));
 }
 
 async function resolveDocument(uriArg?: vscode.Uri): Promise<vscode.TextDocument | undefined> {
@@ -34,12 +34,12 @@ async function resolveDocument(uriArg?: vscode.Uri): Promise<vscode.TextDocument
 async function readDocument(context: vscode.ExtensionContext, uriArg?: vscode.Uri) {
   const doc = await resolveDocument(uriArg);
   if (!doc) return;
-  const job = buildJob({ source: doc.getText(), baseOffset: 0, docUri: doc.uri, title: titleFor(doc.uri) });
-  if (!job) {
+  const source = doc.getText();
+  if (!source.trim()) {
     vscode.window.showInformationMessage(vscode.l10n.t('Read Aloud: nothing readable found in this document.'));
     return;
   }
-  PlayerPanel.show(context.extensionUri).startJob(job, 0);
+  PlayerPanel.show(context).open(source, titleFor(doc.uri), { docUri: doc.uri });
 }
 
 async function readFromCursor(context: vscode.ExtensionContext) {
@@ -49,14 +49,15 @@ async function readFromCursor(context: vscode.ExtensionContext) {
     return;
   }
   const doc = editor.document;
-  const job = buildJob({ source: doc.getText(), baseOffset: 0, docUri: doc.uri, title: titleFor(doc.uri) });
-  if (!job) {
+  const source = doc.getText();
+  if (!source.trim()) {
     vscode.window.showInformationMessage(vscode.l10n.t('Read Aloud: nothing readable found in this document.'));
     return;
   }
-  const offset = doc.offsetAt(editor.selection.active);
-  const startIndex = chunkIndexForOffset(job, offset);
-  PlayerPanel.show(context.extensionUri).startJob(job, startIndex);
+  PlayerPanel.show(context).open(source, titleFor(doc.uri), {
+    docUri: doc.uri,
+    startOffset: doc.offsetAt(editor.selection.active),
+  });
 }
 
 async function readSelection(context: vscode.ExtensionContext) {
@@ -64,16 +65,16 @@ async function readSelection(context: vscode.ExtensionContext) {
   if (!editor || editor.selection.isEmpty) {
     return readFromCursor(context);
   }
-  const doc = editor.document;
-  const sel = editor.selection;
-  const source = doc.getText(sel);
-  const baseOffset = doc.offsetAt(sel.start);
-  const job = buildJob({ source, baseOffset, docUri: doc.uri, title: vscode.l10n.t('{0} (selection)', titleFor(doc.uri)) });
-  if (!job) {
+  const source = editor.document.getText(editor.selection);
+  if (!source.trim()) {
     vscode.window.showInformationMessage(vscode.l10n.t('Read Aloud: nothing readable in the selection.'));
     return;
   }
-  PlayerPanel.show(context.extensionUri).startJob(job, 0);
+  PlayerPanel.show(context).open(source, vscode.l10n.t('{0} (selection)', titleFor(editor.document.uri)), {
+    docUri: editor.document.uri,
+    isSelection: true,
+    baseLine: editor.selection.start.line + 1,
+  });
 }
 
 export function deactivate() {
