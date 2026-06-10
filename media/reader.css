@@ -109,6 +109,10 @@ body {
 .btn.on { border-color: var(--accent); color: var(--accent); background: color-mix(in oklab, var(--accent) 12%, var(--surface-2)); }
 .btn[disabled] { opacity: .4; pointer-events: none; }
 
+/* volume cluster in the bar */
+.vol { display: flex; align-items: center; gap: .1rem; }
+.vol input[type="range"] { width: 74px; }
+
 /* speed chip */
 #speed-btn { display: inline-flex; align-items: center; justify-content: center; gap: .2rem; border: 1px solid var(--rule); background: var(--surface-2); color: var(--ink);
   border-radius: var(--r-pill); height: 30px; min-width: 3.4rem; padding: 0 .7rem; cursor: pointer;
@@ -311,6 +315,9 @@ input[type="range"]:focus-visible { outline: 2px solid var(--focus); outline-off
   #reader { padding-left: 1.6rem; padding-right: 1.6rem; }
   .chev { left: -1.4rem; width: 1.05rem; }
   .bar-row { padding-left: .6rem; padding-right: .6rem; gap: .4rem; }
+}
+@media (max-width: 540px) {
+  .vol input[type="range"] { display: none; } /* mute button stays; full slider lives on width */
 }
 @media (max-width: 360px) {
   [data-act="edit"] { display: none; }

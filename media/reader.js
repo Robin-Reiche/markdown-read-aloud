@@ -107,6 +107,7 @@
           <div class="meta"><span id="pos"></span><span class="dot"></span><span id="eta"></span><span class="dot"></span><span class="chip" id="curlang">EN</span></div>
         </div>
         <button id="speed-btn" aria-haspopup="true" aria-expanded="false" title="${esc(L.speed)}" aria-label="${esc(L.speed)}">1.0×</button>
+        <div class="vol"><button class="ico-btn" id="mute" title="${esc(L.mute)}" aria-label="${esc(L.mute)}">${SPK}</button><input type="range" id="volume" min="0" max="1" step="0.05" value="1" aria-label="${esc(L.volume)}"></div>
         <button class="btn" data-act="edit" title="${esc(L.edit)}" aria-label="${esc(L.edit)}">${I.edit}</button>
         <button class="btn" data-act="gear" title="${esc(L.settings)}" aria-haspopup="true" aria-label="${esc(L.settings)}" aria-expanded="false">${I.gear}</button>
         <div class="progress" id="progress" role="slider" tabindex="0" aria-label="${esc(L.progress)}" aria-valuemin="1" aria-valuemax="1" aria-valuenow="1"><i id="prog"></i></div>
@@ -128,7 +129,6 @@
           <select id="voice" aria-label="${esc(L.voice)}"></select>
         </div>
         <div class="grp"><span class="lbl">${esc(L.playback)}</span>
-          <div class="slider-row"><button class="ico-btn" id="mute" title="${esc(L.mute)}" aria-label="${esc(L.mute)}">${SPK}</button><input type="range" id="volume" min="0" max="1" step="0.05" value="1" aria-label="${esc(L.volume)}"><span class="val" id="volval">100%</span></div>
           <span class="lbl" style="text-transform:none;letter-spacing:0">${esc(L.sleepTimer)}</span>
           <div class="seg-row" id="sleep">
             <button data-sleep="off" class="sel-on">${esc(L.off)}</button><button data-sleep="section" title="${esc(L.untilSectionEnd)}">§</button><button data-sleep="15">15m</button><button data-sleep="30">30m</button><button data-sleep="60">60m</button></div>
@@ -709,8 +709,12 @@
   function updateMuteUI() {
     const b = $('mute'); const m = state.muted || state.volume === 0;
     if (b) { b.classList.toggle('muted', m); b.innerHTML = m ? SPK_MUTE : SPK; b.setAttribute('aria-label', m ? L.unmute : L.mute); b.title = m ? L.unmute : L.mute; }
-    const vv = $('volval'); if (vv) vv.textContent = Math.round((m ? 0 : state.volume) * 100) + '%';
-    const v = $('volume'); if (v) v.setAttribute('aria-valuetext', Math.round(state.volume * 100) + '%');
+    const v = $('volume');
+    if (v) {
+      const pct = Math.round((m ? 0 : state.volume) * 100) + '%';
+      v.setAttribute('aria-valuetext', pct);
+      v.title = L.volume + ' ' + pct;
+    }
   }
   function applyVolume() { audio.volume = state.muted ? 0 : state.volume; const v = $('volume'); if (v) v.value = String(state.volume); updateMuteUI(); }
   function applyRate() {
@@ -925,7 +929,9 @@
       else if (e.key === 'PageUp' || e.key === 'PageDown' || e.key === 'Home' || e.key === 'End') { if (state.playing) detachFollow(); }
     });
     document.addEventListener('click', (e) => {
-      if (openPopInfo && !e.target.closest('.pop') && e.target !== openPopInfo.btn && !openPopInfo.btn.contains(e.target)) closePops();
+      if (!openPopInfo) return;
+      if (!e.target.isConnected) return; // a handler swapped the icon out — not an outside click
+      if (!e.target.closest('.pop') && e.target !== openPopInfo.btn && !openPopInfo.btn.contains(e.target)) closePops();
     });
   }
 

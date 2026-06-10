@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.1 — 2026-06-10
+
+- **Volume moved into the toolbar.** Mute + slider now live next to the speed chip;
+  on narrow panels the slider yields first (mute stays), keeping the bar one calm line.
+- Fix: toggling mute inside the settings popover closed the popover (the icon swap
+  made the click look like an outside click).
+
 ## 1.3.0 — 2026-06-10
 
 **A whole new reading experience.** The player is now a full reader: it renders the Markdown
