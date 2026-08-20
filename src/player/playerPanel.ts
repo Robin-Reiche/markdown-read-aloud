@@ -1,6 +1,9 @@
 import * as vscode from 'vscode';
+import * as crypto from 'node:crypto';
 import type { Gender, TtsEngine } from '../types';
 import { EdgeEngine } from '../engines/edgeEngine';
+import { SupertonicHttpEngine, supertonicVoiceForGender } from '../engines/supertonicHttpEngine';
+import { AudioCache } from './audioCache';
 import { renderMarkdownHtml } from '../markdown/render';
 import { normalizeForSpeech, applyPronunciations } from '../markdown/normalize';
 import { detectLocale, detectReliableLocale } from '../languageDetector';
@@ -15,10 +18,8 @@ import {
 } from '../voices';
 
 function nonce(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let s = '';
-  for (let i = 0; i < 32; i++) s += chars[Math.floor(Math.random() * chars.length)];
-  return s;
+  // CSP nonces must come from a cryptographically secure source
+  return crypto.randomBytes(32).toString('base64url');
 }
 
 const FONT_FILES: Record<string, [string, number, 'normal' | 'italic']> = {
@@ -40,6 +41,13 @@ const FONT_FILES: Record<string, [string, number, 'normal' | 'italic']> = {
 const POSITIONS_KEY = 'markdownReadAloud.positions';
 const PREFS_KEY = 'markdownReadAloud.readerPrefs';
 const MAX_POSITIONS = 24;
+
+type EngineId = 'edge' | 'supertonic' | 'browser';
+
+/** Hard host-side cap on webview `synth` text — the webview is not a security boundary. */
+const MAX_SYNTH_INPUT = 5000;
+const MAX_CACHE_ENTRIES = 600;
+const MAX_CACHE_BYTES = 128 * 1024 * 1024; // WAV chunks are big; bound bytes, not just entries
 
 interface StoredPosition {
   idx: number;
@@ -76,9 +84,9 @@ export class PlayerPanel {
   private disposables: vscode.Disposable[] = [];
   private disposed = false;
 
-  private engine: TtsEngine = new EdgeEngine();
-  private engineId: 'edge' | 'browser' = 'edge';
-  private supertonicWarned = false;
+  private engine: TtsEngine | null = null; // created lazily so an unselected engine is never instantiated
+  private engineId: EngineId = 'edge';
+  private supertonicFailureNotified = false;
 
   private docLocale = 'en-US';
   private activeLocale = 'en-US'; // language the manual voice/locale picker operates on
@@ -96,7 +104,7 @@ export class PlayerPanel {
   private generation = 0; // bumped on voice/lang/gender change to discard stale synths
   private hadSuccess = false; // have we ever gotten audio from Edge this session?
 
-  private cache = new Map<string, ArrayBuffer>(); // key: voice|locale|cleanText
+  private cache = new AudioCache(MAX_CACHE_ENTRIES, MAX_CACHE_BYTES); // key: engine|voice|locale|cleanText
   private inflight = new Map<string, Promise<void>>();
 
   static show(context: vscode.ExtensionContext): PlayerPanel {
@@ -159,7 +167,14 @@ export class PlayerPanel {
     const autoDetect = cfg.get<boolean>('autoDetectLanguage', true);
     this.gender = cfg.get<Gender>('preferredGender', 'female');
     this.autoLang = cfg.get<boolean>('perParagraphLanguage', false);
-    this.engineId = this.resolveEngine(cfg);
+    this.setEngine(this.resolveEngine(cfg));
+    this.supertonicFailureNotified = false;
+    if (this.engineId === 'supertonic') {
+      // availability probe (no document text) so setup problems surface immediately
+      void this.hostEngine()
+        .warm('', '')
+        .catch((err: any) => void this.notifySupertonicFailure(String(err?.message || err)));
+    }
     this.docLocale = autoDetect ? detectLocale(source, fallback).locale : fallback;
     this.activeLocale = this.docLocale;
     this.currentVoice = pickVoice(this.docLocale, this.gender, this.overrides());
@@ -274,16 +289,65 @@ export class PlayerPanel {
     }
   }
 
-  private resolveEngine(cfg: vscode.WorkspaceConfiguration): 'edge' | 'browser' {
+  /** The configured engine is honored as-is — never silently substituted. */
+  private resolveEngine(cfg: vscode.WorkspaceConfiguration): EngineId {
     const eng = cfg.get<string>('engine', 'edge');
-    if (eng === 'browser') return 'browser';
-    if (eng === 'supertonic' && !this.supertonicWarned) {
-      this.supertonicWarned = true;
-      vscode.window.showInformationMessage(
-        vscode.l10n.t('Read Aloud: the offline Supertonic engine is coming in a later update — using Edge neural voices for now.')
-      );
+    return eng === 'browser' || eng === 'supertonic' ? eng : 'edge';
+  }
+
+  /** Switch the host-side engine, disposing the old one. */
+  private setEngine(id: EngineId) {
+    if (id === this.engineId) return;
+    this.engine?.dispose();
+    this.engine = null;
+    this.inflight.clear();
+    this.engineId = id;
+    this.supertonicFailureNotified = false;
+  }
+
+  private hostEngine(): TtsEngine {
+    if (!this.engine) {
+      this.engine = this.engineId === 'supertonic' ? new SupertonicHttpEngine() : new EdgeEngine();
     }
-    return 'edge';
+    return this.engine;
+  }
+
+  /**
+   * Fail-closed handling for the offline engine: synthesis stops, nothing is
+   * retried against an online service, and switching to Edge is a separate,
+   * explicit user action that warns text will leave the machine.
+   */
+  private async notifySupertonicFailure(detail: string) {
+    if (this.supertonicFailureNotified) return;
+    this.supertonicFailureNotified = true;
+    const retry = vscode.l10n.t('Retry');
+    const useBrowser = vscode.l10n.t('Use System Voices (offline)');
+    const useEdge = vscode.l10n.t('Use Edge Voices (online — sends text to Microsoft)');
+    const choice = await vscode.window.showErrorMessage(
+      vscode.l10n.t(
+        'Read Aloud: the local Supertonic server is unavailable ({0}). No document text was sent anywhere. Start it with "supertonic serve --host 127.0.0.1 --port 7788", then retry.',
+        detail
+      ),
+      retry,
+      useBrowser,
+      useEdge
+    );
+    if (this.disposed) return;
+    if (choice === retry) {
+      this.supertonicFailureNotified = false;
+      this.post({ type: 'control', action: 'playpause' });
+    } else if (choice === useBrowser) {
+      this.switchEngineExplicit('browser');
+    } else if (choice === useEdge) {
+      this.switchEngineExplicit('edge');
+    }
+  }
+
+  /** Explicit, user-chosen engine switch for this session (does not rewrite settings). */
+  private switchEngineExplicit(id: EngineId) {
+    this.setEngine(id);
+    this.generation++;
+    this.post({ type: 'engineChanged', engine: id });
   }
 
   // ---- per-document resume -------------------------------------------------
@@ -342,6 +406,11 @@ export class PlayerPanel {
    *  and its load generation (echoed back so late audio from a previous doc is dropped). */
   private async provideSynth(id: number, text: string, loadGen: number) {
     if (this.engineId === 'browser') return; // webview synthesizes locally
+    if (text.length > MAX_SYNTH_INPUT) {
+      // the webview targets ~sentence-sized chunks; anything this large is anomalous
+      this.post({ type: 'audioError', id, gen: loadGen });
+      return;
+    }
     const cfg = vscode.workspace.getConfiguration('markdownReadAloud');
     const clean = applyPronunciations(
       normalizeForSpeech(text),
@@ -360,7 +429,10 @@ export class PlayerPanel {
       locale = this.activeLocale;
       voice = this.currentVoice;
     }
-    const key = `${voice}|${locale}|${clean}`;
+    // Supertonic voice styles (F1–F5/M1–M5) are a separate namespace — never
+    // hand it an Edge voice short name.
+    if (this.engineId === 'supertonic') voice = supertonicVoiceForGender(this.gender);
+    const key = `${this.engineId}|${voice}|${locale}|${clean}`;
 
     const cached = this.cache.get(key);
     if (cached) {
@@ -379,20 +451,20 @@ export class PlayerPanel {
     }
     const task = (async () => {
       try {
-        const buf = await this.engine.synth(clean, voice, locale);
+        const buf = await this.hostEngine().synth(clean, voice, locale);
         const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
         this.hadSuccess = true;
-        this.cache.set(key, ab);
-        // FIFO cap so long multi-document sessions don't grow without bound
-        if (this.cache.size > 600) {
-          const oldest = this.cache.keys().next().value;
-          if (oldest) this.cache.delete(oldest);
-        }
+        this.cache.set(key, ab); // LRU, capped by entries and total bytes
         if (gen === this.generation) this.sendAudio(id, ab, loadGen, locale);
       } catch (err: any) {
         if (gen !== this.generation) return;
-        if (this.engineId === 'edge' && !this.hadSuccess) {
-          this.engineId = 'browser';
+        if (this.engineId === 'supertonic') {
+          // Fail closed: stop playback, report, and never substitute an online engine.
+          this.post({ type: 'control', action: 'stop' });
+          this.post({ type: 'audioError', id, gen: loadGen });
+          void this.notifySupertonicFailure(String(err?.message || err));
+        } else if (this.engineId === 'edge' && !this.hadSuccess) {
+          this.setEngine('browser');
           vscode.window.showWarningMessage(
             vscode.l10n.t(
               'Read Aloud: Edge voices unreachable ({0}). Falling back to system voices (offline).',
@@ -412,7 +484,7 @@ export class PlayerPanel {
   }
 
   private sendAudio(id: number, ab: ArrayBuffer, gen: number, locale: string) {
-    this.post({ type: 'audio', id, gen, locale, mime: this.engine.mime, bytes: ab });
+    this.post({ type: 'audio', id, gen, locale, mime: this.hostEngine().mime, bytes: ab });
   }
 
   private overrides(): Record<string, string> {
@@ -605,7 +677,7 @@ export class PlayerPanel {
     if (this.updateTimer) clearTimeout(this.updateTimer);
     PlayerPanel.current = undefined;
     PlayerPanel.status?.hide();
-    this.engine.dispose();
+    this.engine?.dispose();
     this.panel.dispose();
     while (this.disposables.length) this.disposables.pop()?.dispose();
   }

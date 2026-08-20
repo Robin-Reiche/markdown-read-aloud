@@ -20,3 +20,8 @@ _render_tmp.js
 # internal working docs / throwaway prototype — kept locally, not for the public repo
 prototype/
 PRODUCT.md
+
+# unit-test bundle output
+.test-dist/
+# local Supertonic server venv (see supertonic-server-requirements.lock.txt)
+.venv-supertonic/

@@ -450,16 +450,16 @@
     if (!SEGMENTS.length) return;
     if (state.ended) { state.ended = false; playAt(0); return; }
     setPlaying(true);
-    if (state.engine === 'edge') {
+    if (state.engine !== 'browser') {
       if (audio.src && !audio.ended && audio.currentTime > 0) audio.play().catch(() => setPlaying(false));
       else playAt(state.idx);
     } else { if (speechSynthesis.paused && speechSynthesis.speaking) speechSynthesis.resume(); else speak(state.idx); }
   }
-  function doPause() { setPlaying(false); if (state.engine === 'edge') audio.pause(); else speechSynthesis.pause(); }
+  function doPause() { setPlaying(false); if (state.engine !== 'browser') audio.pause(); else speechSynthesis.pause(); }
   function togglePlay() { state.playing ? doPause() : doPlay(); }
   function doStop() {
     setPlaying(false);
-    if (state.engine === 'edge') stopAudioEl(); else speechSynthesis.cancel();
+    if (state.engine !== 'browser') stopAudioEl(); else speechSynthesis.cancel();
     state.idx = 0; state.ended = false; waitingFor = -1;
     SEGMENTS.forEach((s) => s.el.classList.remove('speaking'));
     disarmSleep(); updateProgress();
@@ -944,6 +944,7 @@
       case 'audio': onAudio(m); break;
       case 'audioError': onAudioError(m); break;
       case 'engineFallback': switchToBrowser(); break;
+      case 'engineChanged': onEngineChanged(m.engine); break;
       case 'voiceUi': onVoiceUi(m); break;
       case 'control': if (m.action === 'playpause') togglePlay(); else if (m.action === 'stop') doStop(); break;
     }
@@ -1090,10 +1091,17 @@
     renderPickers();
     if (state.engine === 'browser') initSynthVoices();
     if (state.playing) playAt(state.idx);
-    else if (state.engine === 'edge') stopAudioEl();
+    else if (state.engine !== 'browser') stopAudioEl();
     else speechSynthesis.cancel();
   }
   function switchToBrowser() { state.engine = 'browser'; audio.pause(); initSynthVoices(); if (state.playing) speak(state.idx); }
+  /* explicit engine switch from the host (user chose it in a notification) */
+  function onEngineChanged(engine) {
+    state.engine = engine || 'edge';
+    clearAudioCache(); // cached blobs are from the previous engine
+    if (state.engine === 'browser') { audio.pause(); initSynthVoices(); if (state.playing) speak(state.idx); }
+    else { speechSynthesis.cancel(); if (state.playing) playAt(state.idx); }
+  }
 
   /* ---------------- boot ---------------- */
   buildChrome();

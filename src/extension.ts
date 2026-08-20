@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { PlayerPanel } from './player/playerPanel';
+import { SupertonicHttpEngine } from './engines/supertonicHttpEngine';
 import { titleFor } from './reader';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -15,6 +16,31 @@ export function activate(context: vscode.ExtensionContext) {
     else vscode.window.showInformationMessage(vscode.l10n.t('Read Aloud: no active player. Run "Read Aloud: Read Document" to start.'));
   });
   reg('markdownReadAloud.openPlayer', () => readDocument(context));
+  reg('markdownReadAloud.checkSupertonic', () => checkSupertonic());
+}
+
+/** Verify the local Supertonic server is reachable. Sends no document text. */
+async function checkSupertonic() {
+  const engine = new SupertonicHttpEngine();
+  try {
+    const info = await engine.health();
+    vscode.window.showInformationMessage(
+      vscode.l10n.t(
+        'Read Aloud: local Supertonic server is running (version {0}, {1} voice styles loaded). No document text was sent.',
+        String(info.version ?? 'unknown'),
+        String(info.voices_loaded ?? 0)
+      )
+    );
+  } catch (err: any) {
+    vscode.window.showErrorMessage(
+      vscode.l10n.t(
+        'Read Aloud: no local Supertonic server at 127.0.0.1:7788 ({0}). Install it with "pip install supertonic[serve]" and start it with "supertonic serve --host 127.0.0.1 --port 7788".',
+        String(err?.message || err)
+      )
+    );
+  } finally {
+    engine.dispose();
+  }
 }
 
 async function resolveDocument(uriArg?: vscode.Uri): Promise<vscode.TextDocument | undefined> {
