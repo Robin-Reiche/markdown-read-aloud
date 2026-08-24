@@ -946,7 +946,7 @@
       case 'engineFallback': switchToBrowser(); break;
       case 'engineChanged': onEngineChanged(m.engine); break;
       case 'voiceUi': onVoiceUi(m); break;
-      case 'control': if (m.action === 'playpause') togglePlay(); else if (m.action === 'stop') doStop(); break;
+      case 'control': if (m.action === 'playpause') togglePlay(); else if (m.action === 'pause') doPause(); else if (m.action === 'stop') doStop(); break;
     }
   });
 

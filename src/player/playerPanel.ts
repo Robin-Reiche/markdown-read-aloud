@@ -470,8 +470,10 @@ export class PlayerPanel {
       } catch (err: any) {
         if (gen !== this.generation) return;
         if (this.engineId === 'supertonic') {
-          // Fail closed: stop playback, report, and never substitute an online engine.
-          this.post({ type: 'control', action: 'stop' });
+          // Fail closed: hold playback, report, and never substitute an online engine.
+          // Pause rather than stop, because stop rewinds the reader to the first
+          // sentence and Retry would then restart the whole document.
+          this.post({ type: 'control', action: 'pause' });
           this.post({ type: 'audioError', id, gen: loadGen });
           void this.notifySupertonicFailure(String(err?.message || err));
         } else if (this.engineId === 'edge' && !this.hadSuccess) {
