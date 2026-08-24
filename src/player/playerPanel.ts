@@ -2,7 +2,11 @@ import * as vscode from 'vscode';
 import * as crypto from 'node:crypto';
 import type { Gender, TtsEngine } from '../types';
 import { EdgeEngine } from '../engines/edgeEngine';
-import { SupertonicHttpEngine, supertonicVoiceForGender } from '../engines/supertonicHttpEngine';
+import {
+  SupertonicHttpEngine,
+  SUPERTONIC_MAX_INPUT_LENGTH,
+  supertonicVoiceForGender,
+} from '../engines/supertonicHttpEngine';
 import { AudioCache } from './audioCache';
 import { renderMarkdownHtml } from '../markdown/render';
 import { normalizeForSpeech, applyPronunciations } from '../markdown/normalize';
@@ -417,6 +421,13 @@ export class PlayerPanel {
       cfg.get<Record<string, string>>('pronunciations', {})
     );
     if (!clean) {
+      this.post({ type: 'audioError', id, gen: loadGen });
+      return;
+    }
+    // Each engine has its own hard input limit. Reject the oversized sentence
+    // here, so it is reported as one skipped sentence instead of surfacing as
+    // an unreachable-server dialog from the engine's own rejection.
+    if (this.engineId === 'supertonic' && clean.length > SUPERTONIC_MAX_INPUT_LENGTH) {
       this.post({ type: 'audioError', id, gen: loadGen });
       return;
     }
