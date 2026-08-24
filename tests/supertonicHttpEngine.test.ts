@@ -250,6 +250,19 @@ test('times out when the server never answers', async () => {
   );
 });
 
+test('names the cause when the server dies mid-request instead of leaking "socket hang up"', async () => {
+  await withServer(
+    (req, body, res) => {
+      res.socket?.destroy(); // stands in for `pkill supertonic serve` while the model computes
+    },
+    async (endpoint) => {
+      const engine = new SupertonicHttpEngine({ endpoint });
+      await assert.rejects(engine.synth('hello', 'F1', 'en-US'), /Supertonic server stopped mid-request/);
+      engine.dispose();
+    }
+  );
+});
+
 test('serializes concurrent synth calls into one request at a time', async () => {
   let inFlight = 0;
   let maxInFlight = 0;

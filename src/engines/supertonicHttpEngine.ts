@@ -63,6 +63,17 @@ function parseEndpoint(endpoint: string): { host: string; port: number } {
   return { host, port };
 }
 
+/**
+ * Node reports a server that dies mid-request as a bare "socket hang up". That
+ * string ends up verbatim in the user-facing failure dialog, so name the cause
+ * the same way ECONNREFUSED is named.
+ */
+function describeTransportError(e: NodeJS.ErrnoException): Error {
+  if (e.code === 'ECONNREFUSED') return new Error('Supertonic server is not running');
+  if (e.code === 'ECONNRESET' || e.code === 'EPIPE') return new Error('Supertonic server stopped mid-request');
+  return e;
+}
+
 interface HealthInfo {
   status: string;
   version?: string;
@@ -203,9 +214,7 @@ export class SupertonicHttpEngine implements TtsEngine {
       };
 
       req.on('timeout', () => fail(new Error('Supertonic connection timed out')));
-      req.on('error', (e: NodeJS.ErrnoException) => {
-        fail(e.code === 'ECONNREFUSED' ? new Error('Supertonic server is not running') : e);
-      });
+      req.on('error', (e: NodeJS.ErrnoException) => fail(describeTransportError(e)));
 
       req.on('response', (res) => {
         const status = res.statusCode ?? 0;
@@ -237,7 +246,7 @@ export class SupertonicHttpEngine implements TtsEngine {
           }
           succeed(buf);
         });
-        res.on('error', fail);
+        res.on('error', (e: NodeJS.ErrnoException) => fail(describeTransportError(e)));
       });
 
       req.end(body);
