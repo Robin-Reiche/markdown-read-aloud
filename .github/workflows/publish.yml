@@ -1,14 +1,21 @@
-name: Publish to VS Code Marketplace
+name: Publish to VS Code Marketplace and Open VSX
 
 # Publishes whenever a version tag is pushed, e.g. v0.2.0.
 # Release flow:
 #   1. bump "version" in package.json
 #   2. commit
 #   3. git tag v0.2.0 && git push origin v0.2.0
+# workflow_dispatch is here so a release can be re-published to a registry that
+# was added or fixed after its tag was already pushed.
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Tag to publish, e.g. v1.14.0"
+        required: true
 
 jobs:
   publish:
@@ -17,6 +24,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -35,9 +44,18 @@ jobs:
       - name: Build (esbuild bundle)
         run: npm run build
 
-      # vsce runs the "vscode:prepublish" script (esbuild bundle)
-      # automatically before packaging. --no-dependencies because esbuild already
-      # bundles every runtime dep into dist/. --skip-duplicate makes a re-run of an
-      # existing version a no-op instead of a hard failure.
+      # Packaged once and sent to both registries, so the VSIX on Open VSX is byte
+      # for byte the one on the Marketplace rather than a second build.
+      # --no-dependencies because esbuild already bundles every runtime dep into dist/.
+      - name: Package
+        run: npx @vscode/vsce package --no-dependencies --out markdown-read-aloud.vsix
+
+      # --skip-duplicate on both, so re-running the job after one registry failed
+      # does not stop at the one that already went through.
       - name: Publish to Marketplace
-        run: npx @vscode/vsce publish --no-dependencies --skip-duplicate --pat ${{ secrets.VSCE_PAT }}
+        run: npx @vscode/vsce publish --packagePath markdown-read-aloud.vsix --skip-duplicate --pat ${{ secrets.VSCE_PAT }}
+
+      # Open VSX is the registry behind Cursor, VSCodium, Windsurf, Gitpod and
+      # Theia. Namespace RobinReiche, same one csv-grid-editor publishes to.
+      - name: Publish to Open VSX
+        run: npx ovsx publish markdown-read-aloud.vsix --skip-duplicate --pat ${{ secrets.OVSX_PAT }}
