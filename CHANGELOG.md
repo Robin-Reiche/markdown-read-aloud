@@ -27,6 +27,28 @@ instead of showing a "coming later" notice and silently using the online Edge en
 - Unit tests (Node's built-in test runner) cover the new engine's request policy and
   the cache; `npm test`.
 
+- **Wrapped paragraphs no longer shatter into fragments.** A paragraph that the
+  Markdown source wraps across several lines was being split into one "sentence"
+  per source line — the sentence splitter treats every line break as a sentence
+  boundary (Unicode rule SB4). Each fragment was too short to language-detect
+  reliably, so short bits like `Wegpunkten.` or `Waypoint-Limits.` were misread as
+  Swedish/English and the voice flipped mid-paragraph. Line breaks are now folded
+  to spaces before segmentation, so wrapped paragraphs read as whole sentences.
+- **Auto-language off now holds offline too.** With Edge voices unreachable the
+  reader falls back to system voices; that path picked a voice per segment from a
+  rough heuristic, ignoring the "Auto language (per paragraph)" toggle. It now
+  reads the whole document in the active language when the toggle is off.
+- **Scroll freely while it reads.** Scrolling away (wheel, trackpad, or the scrollbar)
+  now releases the auto-scroll so you can read ahead without the view snapping back to
+  the spoken sentence on every new line. It re-follows only once you settle and the
+  spoken sentence has come to rest near the center — or tap **Back to reading**.
+- **"Read section" no longer covers the heading.** The hover button now floats in the
+  whitespace above the heading instead of sitting on top of long, wrapped titles.
+- **Readable code blocks & callouts in every theme.** Code blocks and blockquotes now
+  derive their own background and text colors instead of inheriting VS Code's code
+  colors, which on some light themes (e.g. Solarized) produced a dark box with
+  dark, low-contrast text.
+
 ## 1.3.1 — 2026-06-10
 
 - **Volume moved into the toolbar.** Mute + slider now live next to the speed chip;

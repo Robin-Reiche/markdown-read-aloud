@@ -231,7 +231,13 @@
   }
 
   function segmentRun(block, nodes, ttsPrefix) {
-    const text = nodes.map((n) => n.textContent).join('');
+    // Soft line wraps in the Markdown source survive as newlines in the text node.
+    // Intl.Segmenter treats every line break as a sentence boundary (Unicode SB4),
+    // which shatters a wrapped paragraph into one "sentence" per source line — each
+    // fragment too short to language-detect reliably, so the voice flips mid-paragraph.
+    // Fold the breaks to spaces first; it's a 1:1, length-preserving swap, so the
+    // character offsets the Range mapping below relies on stay valid.
+    const text = nodes.map((n) => n.textContent).join('').replace(/[\r\n\u2028\u2029]/g, ' ');
     if (!text.trim()) return false;
     // index every text node in the run by cumulative character offset
     const tnodes = [];
@@ -402,7 +408,9 @@
     const lang = loc ? loc.split('-')[0] : (state.engine === 'browser' && SEGMENTS[i] ? SEGMENTS[i].lang : null);
     if (lang) cl.textContent = LANG_LABEL[lang] || lang.toUpperCase();
   }
+  let autoScrollUntil = 0; // scroll events before this stamp are our own animation, not the user's
   function scrollToSeg(seg) {
+    autoScrollUntil = performance.now() + (RM.matches ? 120 : 700);
     seg.el.scrollIntoView({ behavior: RM.matches ? 'auto' : 'smooth', block: 'center' });
   }
   function stopAudioEl() { audio.pause(); audio.removeAttribute('src'); }
@@ -486,10 +494,19 @@
   audio.addEventListener('error', () => { if (state.playing && audio.src) advance(); });
 
   /* browser engine fallback */
+  /** Which language the system voice should speak segment i in. With auto-language
+      off we read the whole document in one language (the active/doc locale) instead
+      of per-segment heuristics — the host (Edge) path already honors this, so the
+      browser fallback must too, or the setting silently does nothing offline. */
+  function synthBaseLang(i) {
+    if (state.autoLang) return SEGMENTS[i] ? SEGMENTS[i].lang : 'en';
+    const loc = vu && vu.locale ? String(vu.locale).split('-')[0] : '';
+    return loc || (SEGMENTS[i] ? SEGMENTS[i].lang : 'en');
+  }
   function initSynthVoices() {
     const load = () => {
       const vs = speechSynthesis.getVoices();
-      const base = SEGMENTS[state.idx] ? SEGMENTS[state.idx].lang : 'en';
+      const base = synthBaseLang(state.idx);
       synthVoice = vs.find((v) => v.lang.toLowerCase().startsWith(base)) || vs.find((v) => v.default) || vs[0] || null;
     };
     speechSynthesis.onvoiceschanged = load; load();
@@ -499,7 +516,7 @@
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(SEGMENTS[i].text);
     u.rate = Math.min(2.5, Math.max(0.5, state.rate)); u.volume = state.muted ? 0 : state.volume;
-    const vs = speechSynthesis.getVoices(); const base = SEGMENTS[i].lang;
+    const vs = speechSynthesis.getVoices(); const base = synthBaseLang(i);
     const v = vs.find((x) => x.lang.toLowerCase().startsWith(base)) || synthVoice;
     if (v) { u.voice = v; u.lang = v.lang; }
     u.onend = () => { if (state.playing && state.idx === i) advance(); };
@@ -522,20 +539,30 @@
     p.classList.toggle('show', show);
     if (show) hideResumePill();
   }
-  let scrollRaf = 0;
+  let settleTimer = 0;
   function onScroll() {
     const wrap = $('reader-wrap');
     $('bar').classList.toggle('scrolled', wrap.scrollTop > 4);
-    if (state.following || !state.playing) return;
-    if (scrollRaf) return;
-    scrollRaf = requestAnimationFrame(() => {
-      scrollRaf = 0;
+    if (!state.playing) return;
+    if (state.following) {
+      // A scroll we didn't initiate (scrollbar drag, keyboard, a trackpad fling)
+      // releases the teleprompter leash so the reader can browse ahead. Our own
+      // scrollToSeg animation is fenced off by autoScrollUntil, so it never
+      // detaches itself.
+      if (performance.now() > autoScrollUntil) detachFollow();
+      return;
+    }
+    // Detached: re-engage only once the user has settled AND the spoken sentence
+    // has come to rest near the exact center. A casual scroll-ahead never snaps back.
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(() => {
+      if (state.following || !state.playing) return;
       const seg = SEGMENTS[state.idx]; if (!seg) return;
       const r = seg.el.getBoundingClientRect();
       const w = wrap.getBoundingClientRect();
       const cy = (r.top + r.bottom) / 2;
-      if (cy > w.top + w.height * 0.32 && cy < w.top + w.height * 0.68) attachFollow();
-    });
+      if (cy > w.top + w.height * 0.44 && cy < w.top + w.height * 0.56) attachFollow();
+    }, 360);
   }
 
   /* ---------------- resume pill ---------------- */
