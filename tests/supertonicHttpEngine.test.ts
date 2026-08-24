@@ -338,6 +338,22 @@ test('warm rejects while the model is still loading', async () => {
   );
 });
 
+test('aborts a health response that streams past its cap', async () => {
+  await withServer(
+    (req, body, res) => {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      const filler = Buffer.alloc(16 * 1024, 0x20);
+      const timer = setInterval(() => res.write(filler), 1);
+      res.on('close', () => clearInterval(timer));
+    },
+    async (endpoint) => {
+      const engine = new SupertonicHttpEngine({ endpoint });
+      await assert.rejects(engine.health(), /too large/i);
+      engine.dispose();
+    }
+  );
+});
+
 test('warm rejects when nothing is listening', async () => {
   // grab a port and close it so it is very likely unused
   const srv = http.createServer();

@@ -18,7 +18,8 @@ instead of showing a "coming later" notice and silently using the online Edge en
   without sending any text.
 - The `markdownReadAloud.engine` setting is now application-scoped, so a workspace's
   `.vscode/settings.json` can no longer flip a user from an offline engine to an
-  online one.
+  online one. If you set the engine per workspace, that entry stops taking effect
+  and the value from your user settings applies instead.
 - The synthesized-audio cache is now LRU with both entry and byte budgets (WAV chunks
   are much larger than MP3), and the host enforces its own input-length limit on
   synthesis requests from the webview.

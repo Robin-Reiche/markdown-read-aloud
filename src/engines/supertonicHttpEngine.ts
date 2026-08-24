@@ -16,6 +16,8 @@ const DEFAULT_MAX_RESPONSE_BYTES = 32 * 1024 * 1024;
 const DEFAULT_CONNECT_TIMEOUT = 5_000;
 const DEFAULT_TOTAL_TIMEOUT = 45_000;
 const HEALTH_TIMEOUT = 3_000;
+/** The health payload is a short JSON object; anything larger is not one. */
+const HEALTH_MAX_RESPONSE_BYTES = 64 * 1024;
 
 const WAV_MIMES = new Set(['audio/wav', 'audio/x-wav', 'audio/wave']);
 
@@ -100,7 +102,6 @@ export class SupertonicHttpEngine implements TtsEngine {
   private readonly totalTimeoutMs: number;
   private readonly maxResponseBytes: number;
   private tail: Promise<unknown> = Promise.resolve();
-  private disposed = false;
 
   constructor(options: SupertonicOptions = {}) {
     const { host, port } = parseEndpoint(options.endpoint ?? SUPERTONIC_DEFAULT_ENDPOINT);
@@ -136,7 +137,15 @@ export class SupertonicHttpEngine implements TtsEngine {
         { host: this.host, port: this.port, path: '/v1/health', method: 'GET', timeout: HEALTH_TIMEOUT },
         (res) => {
           const chunks: Buffer[] = [];
-          res.on('data', (c: Buffer) => chunks.push(c));
+          let received = 0;
+          res.on('data', (c: Buffer) => {
+            received += c.length;
+            if (received > HEALTH_MAX_RESPONSE_BYTES) {
+              req.destroy(new Error('Supertonic health response is too large'));
+              return;
+            }
+            chunks.push(c);
+          });
           res.on('end', () => {
             if (res.statusCode !== 200) reject(new Error(`Supertonic health check returned HTTP ${res.statusCode}`));
             else resolve(Buffer.concat(chunks));
@@ -254,6 +263,7 @@ export class SupertonicHttpEngine implements TtsEngine {
   }
 
   dispose(): void {
-    this.disposed = true;
+    // Nothing to release. Sockets live per request and are bounded by the total
+    // timeout, so an in-flight synthesis is left to finish or time out.
   }
 }
