@@ -1,5 +1,7 @@
 // Bundles the unit tests for Node's built-in test runner.
-//   node esbuild.tests.js && node --test .test-dist
+//   node esbuild.tests.js && node --test ".test-dist/*.test.js"
+// The quoted glob needs Node 21 or newer, where the test runner expands it
+// itself. On Node 20 the pattern reaches the runner as a literal path.
 // Tests cover the vscode-free modules (engines, caches); the esbuild bundle
 // step doubles as a per-file check that test code stays free of `vscode` imports.
 const esbuild = require('esbuild');
