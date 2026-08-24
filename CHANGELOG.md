@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.14.0 — 2026-08-24
 
 **Supertonic offline voices are real.** Selecting the Supertonic engine now speaks
 through a local [Supertonic](https://github.com/supertone-inc/supertonic) server

@@ -130,7 +130,7 @@ pip install 'supertonic[serve]'
 supertonic serve --host 127.0.0.1 --port 7788
 ```
 
-The server's **first start downloads ~260 MB of model files** from Hugging Face;
+The server's **first start downloads ~386 MB of model files** from Hugging Face;
 after that, synthesis is fully local (44.1 kHz WAV, no GPU required). Then set
 `markdownReadAloud.engine` to `supertonic`. The command
 **Read Aloud: Check Local Supertonic Server** verifies the server is reachable
@@ -165,7 +165,7 @@ supertonic info      # model files live in ~/.cache/supertonic3
 ```
 
 - **Interactive API docs** are served at `http://127.0.0.1:7788/docs`.
-- **Model files** are cached in `~/.cache/supertonic3` (~260 MB). Deleting the
+- **Model files** are cached in `~/.cache/supertonic3` (~386 MB). Deleting the
   cache makes the next server start re-download them; copying that directory to
   another machine avoids the download entirely (useful for air-gapped setups).
 - **Pinning:** install with a pinned version (`pip install supertonic==1.3.1`)

@@ -2,7 +2,7 @@
   "name": "markdown-read-aloud",
   "displayName": "Markdown Read Aloud — Free Neural Text-to-Speech",
   "description": "Read Markdown files aloud with free, high-quality neural voices — no API key, no sign-up. Text-to-speech (TTS) with automatic language detection across 75 languages, live 0.5×–2.5× speed, read from cursor/selection/heading, and sentence highlighting. Great for proofreading and listening to docs and READMEs.",
-  "version": "1.3.3",
+  "version": "1.14.0",
   "publisher": "RobinReiche",
   "license": "MIT",
   "repository": {
