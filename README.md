@@ -111,11 +111,91 @@ developers write most: Markdown.
 
 | Engine | Quality | Network | Notes |
 |---|---|---|---|
-| **Edge** (default) | ★★★ neural | online | Free, no key. Recommended. |
-| **Supertonic** | ★★★ neural | offline | Fully on-device (downloads models on first use). *Coming in a later update.* |
+| **Edge** (default) | ★★★ neural | online | Free, no key. Sends the text being read to Microsoft. |
+| **Supertonic** | ★★★ neural | offline | Local neural voices via a Supertonic server on your machine (see below). |
 | **Browser** | ★ system | offline | Your OS voices. Automatic fallback if Edge is unreachable. |
 
-Switch via the `markdownReadAloud.engine` setting.
+Switch via the `markdownReadAloud.engine` setting. The engine choice is an
+application-level (user) setting: a workspace's `.vscode/settings.json` cannot
+override it, so opening someone else's repository can never silently change
+whether your text goes online.
+
+### Using Supertonic (offline neural voices)
+
+The Supertonic engine talks to [Supertonic](https://github.com/supertone-inc/supertonic)'s
+official local server over loopback HTTP. One-time setup:
+
+```bash
+pip install 'supertonic[serve]'
+supertonic serve --host 127.0.0.1 --port 7788
+```
+
+The server's **first start downloads ~260 MB of model files** from Hugging Face;
+after that, synthesis is fully local (44.1 kHz WAV, no GPU required). Then set
+`markdownReadAloud.engine` to `supertonic`. The command
+**Read Aloud: Check Local Supertonic Server** verifies the server is reachable
+without sending any document text.
+
+Privacy behavior is strict and fail-closed:
+
+- The extension only ever connects to `http://127.0.0.1:7788` (fixed loopback;
+  not configurable by workspaces).
+- If the server is not running, reading **stops** with setup instructions.
+  Your text is never silently sent to an online engine instead; switching to
+  Edge is a separate, explicit button that warns text will leave the machine.
+
+Note for Remote SSH / WSL / Dev Containers: the extension host runs on the
+remote side there, so `127.0.0.1:7788` refers to the remote machine or
+container — start `supertonic serve` in that environment. The first release
+targets standard local desktop VS Code.
+
+#### Managing the Supertonic server
+
+Useful commands and facts for day-to-day operation:
+
+```bash
+# is it up? (same probe the extension uses; sends no text)
+curl http://127.0.0.1:7788/v1/health
+
+# list the built-in voice styles (F1–F5 female, M1–M5 male)
+supertonic list-voices
+
+# model location and info
+supertonic info      # model files live in ~/.cache/supertonic3
+```
+
+- **Interactive API docs** are served at `http://127.0.0.1:7788/docs`.
+- **Model files** are cached in `~/.cache/supertonic3` (~260 MB). Deleting the
+  cache makes the next server start re-download them; copying that directory to
+  another machine avoids the download entirely (useful for air-gapped setups).
+- **Pinning:** install with a pinned version (`pip install supertonic==1.3.1`)
+  or from a lock file so upgrades are deliberate. This repo's tested server
+  versions are recorded in `supertonic-server-requirements.lock.txt`.
+- **Stopping** the server (Ctrl+C, or stopping its service) is always safe —
+  the extension fails closed and tells you how to restart it.
+- **Run it as a service** so it survives reboots. On Linux/WSL2 with systemd,
+  a user unit works well:
+
+  ```ini
+  # ~/.config/systemd/user/supertonic.service
+  [Unit]
+  Description=Supertonic local TTS server (loopback-only)
+
+  [Service]
+  ExecStart=/path/to/venv/bin/supertonic serve --host 127.0.0.1 --port 7788
+  Restart=on-failure
+  RestartSec=5
+
+  [Install]
+  WantedBy=default.target
+  ```
+
+  Then `systemctl --user enable --now supertonic` (and `loginctl enable-linger
+  $USER` to start it at boot rather than first login). Logs:
+  `journalctl --user -u supertonic`.
+- **Upstream status:** Supertone has announced the open-source repository will
+  be archived. The PyPI package and open model weights are expected to remain
+  available, but keep a fork/archive of anything you depend on.
 
 ## Settings
 
@@ -142,7 +222,10 @@ endpoint to synthesize audio. No account or key is required and nothing else is
 collected by this extension. This endpoint is the same one Microsoft Edge uses; it is
 unofficial for third-party use and could change. If it becomes unavailable, the
 extension automatically falls back to your system voices. For a fully offline,
-no-network experience, an on-device engine (Supertonic) is planned.
+no-network experience, use the Supertonic engine (local server, see above) or
+the Browser engine (system voices). When Supertonic is selected, document text
+is only ever sent to the local loopback server — never to an online service —
+and any failure stops reading instead of falling back online.
 
 ## ❤️ Support This Project
 

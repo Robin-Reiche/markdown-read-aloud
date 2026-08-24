@@ -30,3 +30,9 @@ dist/**/*.map
 **/.eslintrc*
 **/*.md.bak
 .github/**
+tests/**
+.test-dist/**
+esbuild.tests.js
+.venv-supertonic/**
+supertonic-server-requirements.lock.txt
+handoff/**

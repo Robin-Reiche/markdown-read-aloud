@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased
+
+**Supertonic offline voices are real.** Selecting the Supertonic engine now speaks
+through a local [Supertonic](https://github.com/supertone-inc/supertonic) server
+(`pip install 'supertonic[serve]'`, then `supertonic serve --host 127.0.0.1 --port 7788`)
+instead of showing a "coming later" notice and silently using the online Edge engine.
+
+- **Fail-closed privacy.** With Supertonic selected, document text only ever goes to
+  the fixed loopback endpoint `127.0.0.1:7788`. If the server is unavailable, reading
+  stops with setup instructions — switching to system voices or to Edge (online) is a
+  separate, explicit choice.
+- **Hardened local HTTP client.** Loopback-only endpoint, no redirects, connection and
+  total timeouts, response size cap, and content-type + RIFF/WAVE validation. Errors
+  never contain document text.
+- New command **Read Aloud: Check Local Supertonic Server** verifies availability
+  without sending any text.
+- The `markdownReadAloud.engine` setting is now application-scoped, so a workspace's
+  `.vscode/settings.json` can no longer flip a user from an offline engine to an
+  online one.
+- The synthesized-audio cache is now LRU with both entry and byte budgets (WAV chunks
+  are much larger than MP3), and the host enforces its own input-length limit on
+  synthesis requests from the webview.
+- The webview CSP nonce now comes from a cryptographically secure source.
+- Unit tests (Node's built-in test runner) cover the new engine's request policy and
+  the cache; `npm test`.
+
 ## 1.3.1 — 2026-06-10
 
 - **Volume moved into the toolbar.** Mute + slider now live next to the speed chip;

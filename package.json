@@ -89,6 +89,10 @@
       {
         "command": "markdownReadAloud.openPlayer",
         "title": "%cmd.openPlayer.title%"
+      },
+      {
+        "command": "markdownReadAloud.checkSupertonic",
+        "title": "%cmd.checkSupertonic.title%"
       }
     ],
     "menus": {
@@ -155,6 +159,7 @@
             "%config.engine.enum.browser%"
           ],
           "default": "edge",
+          "scope": "application",
           "markdownDescription": "%config.engine.description%"
         },
         "markdownReadAloud.preferredGender": {
@@ -253,6 +258,7 @@
     "build": "node esbuild.js --production",
     "watch": "node esbuild.js --watch",
     "typecheck": "tsc --noEmit",
+    "test": "node esbuild.tests.js && node --test \".test-dist/*.test.js\"",
     "package": "vsce package --no-dependencies",
     "l10n": "vscode-l10n-dev export -o ./l10n ./src"
   },
