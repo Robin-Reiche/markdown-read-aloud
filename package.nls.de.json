@@ -25,5 +25,8 @@
   "config.codeBlocks.enum.read": "Den Code vorlesen (meist unverständlich)",
   "config.tables.description": "Wie Tabellen behandelt werden. Sie vorzulesen ist meist störend.",
   "config.highlightWhileReading.description": "Den gerade vorgelesenen Satz im Editor hervorheben und dorthin scrollen.",
+  "config.openLocation.description": "Wo sich das Lesefenster öffnet.",
+  "config.openLocation.enum.beside": "Den Editor teilen und den Reader in einer neuen Spalte neben dem Dokument öffnen",
+  "config.openLocation.enum.active": "Den Reader als Tab in der aktuellen Editor-Gruppe öffnen, ohne zu teilen",
   "config.pronunciations.description": "Aussprache-Korrekturen, die vor der Sprachsynthese angewendet werden. Schlüssel sind Wörter (ganze Wörter, Groß-/Kleinschreibung egal) oder Zeichenketten; Werte sind das, was stattdessen gesprochen wird — z. B. `{ \"nginx\": \"engine x\", \"kubectl\": \"kube control\" }`. In den Workspace-Einstellungen teilt das ganze Team ein Projektwörterbuch."
 }

@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.15.0 — 2026-08-30
+
+Two settings for how the reader sits on your screen, both asked for in
+[#2](https://github.com/Robin-Reiche/markdown-read-aloud/issues/2).
+
+- **Choose where the reader opens.** The new `markdownReadAloud.openLocation` setting
+  takes `beside` (the previous behavior, a split column next to your document) or
+  `active`, which opens the reader as a tab in the current editor group without
+  splitting anything. Useful on a single wide monitor, where a split just halves your
+  reading width. The setting takes effect the next time the reader opens.
+- **A fourth reading width.** The comfort row in the reader's settings popover now has
+  **Full** next to Compact, Cozy and Wide. It drops the centered column limit and lets
+  the text run the whole width of the panel, which helps with long CJK documents and
+  wide tables. Like the other three it switches live and is remembered.
+
+One thing to know about `active`: the reader tab covers your document, so the sentence
+highlight in the editor has nothing visible to highlight. That is the trade for not
+splitting the editor.
+
 ## 1.14.0 — 2026-08-24
 
 **Supertonic offline voices are real.** Selecting the Supertonic engine now speaks

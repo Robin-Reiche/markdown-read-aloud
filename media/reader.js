@@ -4,7 +4,7 @@
     title:'Read Aloud', play:'Play', pause:'Pause', stop:'Stop', prev:'Previous sentence', next:'Next sentence',
     speed:'Speed', volume:'Volume', mute:'Mute', unmute:'Unmute', female:'Female', male:'Male', voice:'Voice',
     language:'Language', autoLangLabel:'Auto language (per paragraph)', multilingual:'multilingual',
-    readingFont:'Reading font', comfort:'Comfort', compact:'Compact', cozy:'Cozy', wide:'Wide',
+    readingFont:'Reading font', comfort:'Comfort', compact:'Compact', cozy:'Cozy', wide:'Wide', flat:'Full',
     theme:'Theme', themeAuto:'Follow VS Code', themeStudy:'Study', themeDaylight:'Daylight', themePaper:'Paper',
     ambient:'Ambient focus', badges:'Show language badges', readSection:'Read section', settings:'More settings',
     reading:'Reading', playback:'Playback', minShort:'~{0} min', edit:'Edit source',
@@ -28,7 +28,7 @@
     { key:'mono',  name:'IBM Plex Mono', sub:L.fontMonoSub },
   ];
   const THEMES = ['auto', 'study', 'daylight', 'paper'];
-  const COMFORTS = ['compact', 'cozy', 'wide'];
+  const COMFORTS = ['compact', 'cozy', 'wide', 'flat'];
   const SPEED_PRESETS = [0.75, 1, 1.25, 1.5, 2];
 
   const saved = vscode.getState() || {};
@@ -137,7 +137,7 @@
         <div class="grp"><span class="lbl">${esc(L.theme)}</span><div class="seg-ctl pop-theme" id="theme-pop" role="group" aria-label="${esc(L.theme)}">
           <button data-theme-set="auto" title="${esc(L.themeAuto)}" aria-label="${esc(L.themeAuto)}">${I.auto}</button><button data-theme-set="study" title="${esc(L.themeStudy)}" aria-label="${esc(L.themeStudy)}">${I.moon}</button><button data-theme-set="daylight" title="${esc(L.themeDaylight)}" aria-label="${esc(L.themeDaylight)}">${I.sun}</button><button data-theme-set="paper" title="${esc(L.themePaper)}" aria-label="${esc(L.themePaper)}">${I.paper}</button></div></div>
         <div class="grp"><span class="lbl">${esc(L.comfort)}</span><div class="seg-row" id="comfort">
-          <button data-comfort="compact">${esc(L.compact)}</button><button data-comfort="cozy">${esc(L.cozy)}</button><button data-comfort="wide">${esc(L.wide)}</button></div></div>
+          <button data-comfort="compact">${esc(L.compact)}</button><button data-comfort="cozy">${esc(L.cozy)}</button><button data-comfort="wide">${esc(L.wide)}</button><button data-comfort="flat">${esc(L.flat)}</button></div></div>
         <div class="grp"><span class="lbl">${esc(L.reading)}</span>
           <label class="toggle"><input type="checkbox" id="ambient-t"> ${esc(L.ambient)}</label>
           <label class="toggle"><input type="checkbox" id="badges"> ${esc(L.badges)}</label>

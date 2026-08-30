@@ -25,5 +25,8 @@
   "config.codeBlocks.enum.read": "Leggi il codice ad alta voce (di solito incomprensibile)",
   "config.tables.description": "Come gestire le tabelle. Leggerle ad alta voce è di solito caotico.",
   "config.highlightWhileReading.description": "Evidenzia e scorri fino alla frase attualmente in lettura nell'editor.",
+  "config.openLocation.description": "Dove si apre la finestra di lettura.",
+  "config.openLocation.enum.beside": "Dividere l'editor e aprire il lettore in una nuova colonna accanto al documento",
+  "config.openLocation.enum.active": "Aprire il lettore come scheda nel gruppo di editor corrente, senza dividere",
   "config.pronunciations.description": "Correzioni di pronuncia applicate prima della sintesi vocale. Le chiavi sono parole (parola intera, senza distinzione tra maiuscole e minuscole) o sottostringhe letterali; i valori sono ciò che viene pronunciato al loro posto, ad es. `{ \"nginx\": \"engine x\" }`. Nelle impostazioni dell’area di lavoro tutto il team condivide il dizionario del progetto."
 }

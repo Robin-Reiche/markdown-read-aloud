@@ -81,7 +81,12 @@ The reader is built for long sessions, not five-second glances:
 - **Follows your VS Code theme** by default, with three hand-tuned reading themes —
   Study (dark), Daylight (light) and Paper (sepia).
 - **Four bundled reading fonts** — Literata, Inter, Atkinson Hyperlegible (built for
-  maximum legibility) and IBM Plex Mono — plus Compact / Cozy / Wide comfort presets.
+  maximum legibility) and IBM Plex Mono — plus Compact / Cozy / Wide / Full comfort
+  presets. Full drops the centered column limit and lets the text run the whole
+  width of the panel.
+- **Opens where you want it.** By default the reader splits the editor and sits next
+  to your document. Set `markdownReadAloud.openLocation` to `active` and it opens as
+  a tab in the current editor group instead, without splitting anything.
 - **Reading follows you, not the other way around.** Scroll wherever you like while
   listening; a quiet “Back to reading” pill glides you back to the spoken sentence.
 - **Ambient focus** dims everything but the sentence being read.
@@ -212,6 +217,7 @@ supertonic info      # model files live in ~/.cache/supertonic3
 | `markdownReadAloud.codeBlocks` | `announce` | `skip` / `announce` / `read` code blocks. |
 | `markdownReadAloud.tables` | `skip` | `skip` / `read` tables. |
 | `markdownReadAloud.highlightWhileReading` | `true` | Highlight the current sentence in the reader. |
+| `markdownReadAloud.openLocation` | `beside` | Where the reader opens. `beside` splits the editor into a second column, `active` opens it as a tab in the current editor group. Applies the next time the reader opens. |
 | `markdownReadAloud.volume` | `1.0` | Default playback volume (0–1). |
 | `markdownReadAloud.pronunciations` | `{}` | Pronunciation overrides, e.g. `{ "nginx": "engine x", "kubectl": "kube control" }`. |
 

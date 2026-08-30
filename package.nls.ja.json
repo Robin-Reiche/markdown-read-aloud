@@ -25,5 +25,8 @@
   "config.codeBlocks.enum.read": "コードを読み上げる（通常は聞き取れません）",
   "config.tables.description": "テーブルの扱い方。読み上げると通常は雑音になりがちです。",
   "config.highlightWhileReading.description": "エディター内で現在読み上げている文をハイライトし、そこへスクロールします。",
+  "config.openLocation.description": "リーダーウィンドウを開く場所。",
+  "config.openLocation.enum.beside": "エディターを分割し、ドキュメントの隣の新しい列でリーダーを開きます",
+  "config.openLocation.enum.active": "分割せずに、現在のエディターグループのタブとしてリーダーを開きます",
   "config.pronunciations.description": "音声合成の前に適用される発音の上書き設定です。キーは単語（単語単位・大文字小文字を区別しない）またはリテラル部分文字列、値は代わりに読み上げられる内容です（例: `{ \"nginx\": \"engine x\" }`）。ワークスペース設定に置けばチーム全体でプロジェクト辞書を共有できます。"
 }

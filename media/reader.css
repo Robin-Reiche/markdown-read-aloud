@@ -152,6 +152,7 @@ body.ambient #vignette { opacity: 1; }
 #reader[data-comfort="compact"] { --measure: 38rem; --read-size: 1.06rem; --read-leading: 1.62; }
 #reader[data-comfort="cozy"]    { --measure: 42rem; --read-size: 1.2rem;  --read-leading: 1.78; }
 #reader[data-comfort="wide"]    { --measure: 52rem; --read-size: 1.3rem;  --read-leading: 1.9; }
+#reader[data-comfort="flat"]    { --measure: none;  --read-size: 1.2rem; --read-leading: 1.8; }
 #reader[data-font="serif"] { --reading: var(--f-serif); }
 #reader[data-font="sans"]  { --reading: var(--f-sans); }
 #reader[data-font="a11y"]  { --reading: var(--f-a11y); }

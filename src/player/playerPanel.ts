@@ -111,8 +111,14 @@ export class PlayerPanel {
   private cache = new AudioCache(MAX_CACHE_ENTRIES, MAX_CACHE_BYTES); // key: engine|voice|locale|cleanText
   private inflight = new Map<string, Promise<void>>();
 
+  /** Where the reader opens: a split column next to the document, or the active editor group. */
+  private static openColumn(): vscode.ViewColumn {
+    const where = vscode.workspace.getConfiguration('markdownReadAloud').get<string>('openLocation', 'beside');
+    return where === 'active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside;
+  }
+
   static show(context: vscode.ExtensionContext): PlayerPanel {
-    const column = vscode.ViewColumn.Beside;
+    const column = PlayerPanel.openColumn();
     if (PlayerPanel.current) {
       PlayerPanel.current.panel.reveal(column, true);
       return PlayerPanel.current;
@@ -206,7 +212,7 @@ export class PlayerPanel {
 
     const html = renderMarkdownHtml(source);
     this.panel.title = title;
-    this.panel.reveal(vscode.ViewColumn.Beside, true);
+    this.panel.reveal(PlayerPanel.openColumn(), true);
     this.lastLoad = {
       type: 'load',
       html,
@@ -602,6 +608,7 @@ export class PlayerPanel {
       compact: vscode.l10n.t('Compact'),
       cozy: vscode.l10n.t('Cozy'),
       wide: vscode.l10n.t('Wide'),
+      flat: vscode.l10n.t('Full'),
       theme: vscode.l10n.t('Theme'),
       themeAuto: vscode.l10n.t('Follow VS Code'),
       themeStudy: vscode.l10n.t('Study'),
