@@ -111,6 +111,9 @@ body {
 .btn.play svg { width: 23px; height: 23px; }
 .btn.on { border-color: var(--accent); color: var(--accent); background: color-mix(in oklab, var(--accent) 12%, var(--surface-2)); }
 .btn[disabled] { opacity: .4; pointer-events: none; }
+/* Export sits with the transport but is an action, not a control — set slightly apart. */
+.controls .btn.dl { margin-left: .35rem; color: var(--ink-soft); }
+.controls .btn.dl:hover { color: var(--ink); }
 
 /* volume cluster in the bar */
 .vol { display: flex; align-items: center; gap: .1rem; }

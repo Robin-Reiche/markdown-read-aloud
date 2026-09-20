@@ -5,6 +5,7 @@
   "cmd.togglePlayPause.title": "Lettura ad alta voce: riproduci / pausa",
   "cmd.stop.title": "Lettura ad alta voce: interrompi",
   "cmd.openPlayer.title": "Lettura ad alta voce: apri il lettore",
+  "cmd.exportAudio.title": "Lettura ad alta voce: esporta il documento come file audio",
   "cmd.checkSupertonic.title": "Lettura ad alta voce: Verifica il server locale Supertonic",
   "config.title": "Markdown Read Aloud",
   "config.engine.description": "Quale motore di sintesi vocale usare. Edge invia il testo letto al servizio di lettura online di Microsoft; Supertonic e le voci di sistema restano su questa macchina. È una decisione di fiducia a livello utente, quindi le impostazioni dell'area di lavoro non possono cambiarla.",
@@ -28,5 +29,7 @@
   "config.openLocation.description": "Dove si apre la finestra di lettura.",
   "config.openLocation.enum.beside": "Dividere l'editor e aprire il lettore in una nuova colonna accanto al documento",
   "config.openLocation.enum.active": "Aprire il lettore come scheda nel gruppo di editor corrente, senza dividere",
+  "config.exportFolder.description": "Cartella per i file audio esportati. Vuoto significa la cartella Download. `~` viene espanso.",
+  "config.exportConcurrency.description": "Quante frasi sintetizzare in parallelo durante l'esportazione (1–8). Più alto è più veloce; più basso è più delicato con il servizio vocale.",
   "config.pronunciations.description": "Correzioni di pronuncia applicate prima della sintesi vocale. Le chiavi sono parole (parola intera, senza distinzione tra maiuscole e minuscole) o sottostringhe letterali; i valori sono ciò che viene pronunciato al loro posto, ad es. `{ \"nginx\": \"engine x\" }`. Nelle impostazioni dell’area di lavoro tutto il team condivide il dizionario del progetto."
 }
