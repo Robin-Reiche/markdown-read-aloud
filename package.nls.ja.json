@@ -5,7 +5,7 @@
   "cmd.togglePlayPause.title": "音声読み上げ: 再生 / 一時停止",
   "cmd.stop.title": "音声読み上げ: 停止",
   "cmd.openPlayer.title": "音声読み上げ: プレーヤーを開く",
-  "cmd.exportAudio.title": "Read Aloud: ドキュメントを音声ファイルとして書き出す",
+  "cmd.exportAudio.title": "音声読み上げ: ドキュメントを音声ファイルとして書き出す",
   "cmd.checkSupertonic.title": "音声読み上げ: ローカル Supertonic サーバーを確認",
   "config.title": "Markdown Read Aloud",
   "config.engine.description": "使用するテキスト読み上げエンジン。Edge は読み上げるテキストを Microsoft のオンライン読み上げサービスに送信します。Supertonic とシステム音声はこのマシン内で完結します。これはユーザーレベルの信頼設定であり、ワークスペース設定では変更できません。",

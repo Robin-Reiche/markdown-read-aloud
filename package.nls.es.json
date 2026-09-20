@@ -5,7 +5,7 @@
   "cmd.togglePlayPause.title": "Lectura en voz alta: reproducir o pausar",
   "cmd.stop.title": "Lectura en voz alta: detener",
   "cmd.openPlayer.title": "Lectura en voz alta: abrir el reproductor",
-  "cmd.exportAudio.title": "Read Aloud: Exportar el documento como archivo de audio",
+  "cmd.exportAudio.title": "Lectura en voz alta: exportar el documento como archivo de audio",
   "cmd.checkSupertonic.title": "Lectura en voz alta: Comprobar el servidor local de Supertonic",
   "config.title": "Markdown Read Aloud",
   "config.engine.description": "Qué motor de texto a voz usar. Edge envía el texto leído al servicio de lectura en línea de Microsoft; Supertonic y las voces del sistema permanecen en esta máquina. Es una decisión de confianza a nivel de usuario, por lo que la configuración del área de trabajo no puede cambiarla.",

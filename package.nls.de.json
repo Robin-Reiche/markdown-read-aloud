@@ -5,7 +5,7 @@
   "cmd.togglePlayPause.title": "Vorlesen: Wiedergabe / Pause",
   "cmd.stop.title": "Vorlesen: Stopp",
   "cmd.openPlayer.title": "Vorlesen: Player öffnen",
-  "cmd.exportAudio.title": "Read Aloud: Dokument als Audiodatei exportieren",
+  "cmd.exportAudio.title": "Vorlesen: Dokument als Audiodatei exportieren",
   "cmd.checkSupertonic.title": "Vorlesen: Lokalen Supertonic-Server prüfen",
   "config.title": "Markdown Read Aloud",
   "config.engine.description": "Welche Text-zu-Sprache-Engine verwendet wird. Edge sendet den vorgelesenen Text an Microsofts Online-Vorlesedienst; Supertonic und Systemstimmen bleiben auf diesem Rechner. Dies ist eine Vertrauensentscheidung auf Benutzerebene, Arbeitsbereichseinstellungen können sie nicht ändern.",

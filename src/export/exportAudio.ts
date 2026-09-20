@@ -123,7 +123,7 @@ async function resolveDocument(uriArg?: vscode.Uri): Promise<vscode.TextDocument
  * online with the document text.
  */
 async function resolveExportEngine(configured: string): Promise<ExportEngineId | undefined> {
-  if (configured === 'supertonic') return 'supertonic';
+  if (configured === 'supertonic') return await resolveSupertonic();
   if (configured !== 'browser') return 'edge';
 
   const useEdge = vscode.l10n.t('Use Edge Voices (online — sends text to Microsoft)');
@@ -135,6 +135,38 @@ async function resolveExportEngine(configured: string): Promise<ExportEngineId |
     useEdge
   );
   return choice === useEdge ? 'edge' : undefined;
+}
+
+/**
+ * Supertonic synthesizes only while the user's own server is running. Check once up
+ * front rather than firing a whole document at a dead port, and offer the same way
+ * out the reader does on the same failure.
+ */
+async function resolveSupertonic(): Promise<ExportEngineId | undefined> {
+  const retry = vscode.l10n.t('Retry');
+  const useEdge = vscode.l10n.t('Use Edge Voices (online — sends text to Microsoft)');
+  for (;;) {
+    const engine = new SupertonicHttpEngine();
+    let detail: string;
+    try {
+      await engine.health();
+      return 'supertonic';
+    } catch (err: any) {
+      detail = String(err?.message || err);
+    } finally {
+      engine.dispose();
+    }
+    const choice = await vscode.window.showErrorMessage(
+      vscode.l10n.t(
+        'Read Aloud: the local Supertonic server is unavailable ({0}). No document text was sent anywhere. Start it with "supertonic serve --host 127.0.0.1 --port 7788", then retry.',
+        detail
+      ),
+      retry,
+      useEdge
+    );
+    if (choice === useEdge) return 'edge';
+    if (choice !== retry) return undefined;
+  }
 }
 
 function baseName(uri: vscode.Uri): string {

@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.16.0 — 2026-09-20
+## 1.16.0 — 2026-09-21
 
 **Export a document to a single audio file**, so a long README or set of notes can go
 onto a phone and be listened to away from the editor.
@@ -18,7 +18,9 @@ onto a phone and be listened to away from the editor.
   asked whether to overwrite it or keep both.
 - **MP3 with an ID3 title**, so the file shows a real name in a phone's player rather than
   a filename. The Supertonic engine writes a single joined WAV instead, since it produces
-  WAV and nothing here re-encodes audio.
+  WAV and nothing here re-encodes audio. If its local server is not running, the export
+  says so before it starts, with the command to start it and a way out to Edge, instead of
+  failing one sentence at a time.
 - **Parallel synthesis with a progress notification you can cancel.** Each engine holds one
   serial connection, so the export runs a small pool of them —
   `markdownReadAloud.exportConcurrency` (default 4) sets how many. Sentences that fail to

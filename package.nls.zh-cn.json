@@ -5,7 +5,7 @@
   "cmd.togglePlayPause.title": "朗读：播放 / 暂停",
   "cmd.stop.title": "朗读：停止",
   "cmd.openPlayer.title": "朗读：打开播放器",
-  "cmd.exportAudio.title": "Read Aloud: 将文档导出为音频文件",
+  "cmd.exportAudio.title": "朗读：将文档导出为音频文件",
   "cmd.checkSupertonic.title": "朗读：检查本地 Supertonic 服务器",
   "config.title": "Markdown Read Aloud",
   "config.engine.description": "使用哪个文本转语音引擎。Edge 会将朗读的文本发送到 Microsoft 的在线朗读服务；Supertonic 和系统语音则完全在本机运行。这是用户级别的信任决定，工作区设置无法更改它。",
