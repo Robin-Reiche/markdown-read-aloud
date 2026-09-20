@@ -11,6 +11,7 @@ import { AudioCache } from './audioCache';
 import { renderMarkdownHtml } from '../markdown/render';
 import { normalizeForSpeech, applyPronunciations } from '../markdown/normalize';
 import { detectLocale, detectReliableLocale } from '../languageDetector';
+import { exportDocumentAudio } from '../export/exportAudio';
 import {
   allCuratedLocales,
   curatedPair,
@@ -276,6 +277,9 @@ export class PlayerPanel {
       case 'openSource':
       case 'editSource':
         await this.revealSource(Number(m.line) || 1);
+        break;
+      case 'exportAudio':
+        await exportDocumentAudio(this.docUri);
         break;
       case 'persistPrefs':
         if (m.prefs && typeof m.prefs === 'object') {
@@ -622,6 +626,7 @@ export class PlayerPanel {
       playback: vscode.l10n.t('Playback'),
       minShort: vscode.l10n.t('~{0} min'),
       edit: vscode.l10n.t('Edit source'),
+      download: vscode.l10n.t('Download as audio file'),
       collapseAll: vscode.l10n.t('Collapse all sections'),
       expandAll: vscode.l10n.t('Expand all sections'),
       toggleSection: vscode.l10n.t('Toggle section'),

@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.16.0 — 2026-09-20
+
+**Export a document to a single audio file**, so a long README or set of notes can go
+onto a phone and be listened to away from the editor.
+
+- **A download button in the reader**, sitting right after the play/next controls — where
+  you already are when you decide you would rather listen to this later. There is also one
+  in the editor toolbar next to the speaker, plus the Command Palette, the editor context
+  menu, and the Explorer right-click menu for `.md` files. It renders the whole document (the same blocks,
+  sentence split and voice selection the reader uses) and writes one file named after the
+  document: `notes.md` becomes `notes.mp3`.
+- **The destination is shown before anything is written**, so it is never a surprise: a
+  picker offers the default path (your Downloads folder), **Save As…** for a one-off
+  location, and **Change default folder…**, which saves there and remembers it in
+  `markdownReadAloud.exportFolder` for next time. If the file already exists you are
+  asked whether to overwrite it or keep both.
+- **MP3 with an ID3 title**, so the file shows a real name in a phone's player rather than
+  a filename. The Supertonic engine writes a single joined WAV instead, since it produces
+  WAV and nothing here re-encodes audio.
+- **Parallel synthesis with a progress notification you can cancel.** Each engine holds one
+  serial connection, so the export runs a small pool of them —
+  `markdownReadAloud.exportConcurrency` (default 4) sets how many. Sentences that fail to
+  synthesize are skipped and counted in the final message instead of failing the export.
+- **System voices cannot be exported.** They are synthesized inside the webview, which hands
+  the extension no audio data. With that engine selected the export asks first, rather than
+  quietly sending the document to Microsoft's Edge service.
+
 ## 1.15.0 — 2026-08-30
 
 Two settings for how the reader sits on your screen, both asked for in

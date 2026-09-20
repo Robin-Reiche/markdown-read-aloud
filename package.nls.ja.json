@@ -5,6 +5,7 @@
   "cmd.togglePlayPause.title": "音声読み上げ: 再生 / 一時停止",
   "cmd.stop.title": "音声読み上げ: 停止",
   "cmd.openPlayer.title": "音声読み上げ: プレーヤーを開く",
+  "cmd.exportAudio.title": "Read Aloud: ドキュメントを音声ファイルとして書き出す",
   "cmd.checkSupertonic.title": "音声読み上げ: ローカル Supertonic サーバーを確認",
   "config.title": "Markdown Read Aloud",
   "config.engine.description": "使用するテキスト読み上げエンジン。Edge は読み上げるテキストを Microsoft のオンライン読み上げサービスに送信します。Supertonic とシステム音声はこのマシン内で完結します。これはユーザーレベルの信頼設定であり、ワークスペース設定では変更できません。",
@@ -28,5 +29,7 @@
   "config.openLocation.description": "リーダーウィンドウを開く場所。",
   "config.openLocation.enum.beside": "エディターを分割し、ドキュメントの隣の新しい列でリーダーを開きます",
   "config.openLocation.enum.active": "分割せずに、現在のエディターグループのタブとしてリーダーを開きます",
+  "config.exportFolder.description": "書き出した音声ファイルの保存先フォルダー。空の場合はダウンロードフォルダーです。`~` は展開されます。",
+  "config.exportConcurrency.description": "書き出し時に並列で合成する文の数 (1–8)。大きいほど高速で、小さいほど音声サービスへの負荷が軽くなります。",
   "config.pronunciations.description": "音声合成の前に適用される発音の上書き設定です。キーは単語（単語単位・大文字小文字を区別しない）またはリテラル部分文字列、値は代わりに読み上げられる内容です（例: `{ \"nginx\": \"engine x\" }`）。ワークスペース設定に置けばチーム全体でプロジェクト辞書を共有できます。"
 }

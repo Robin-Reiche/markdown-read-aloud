@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { PlayerPanel } from './player/playerPanel';
 import { SupertonicHttpEngine } from './engines/supertonicHttpEngine';
 import { titleFor } from './reader';
+import { exportDocumentAudio } from './export/exportAudio';
 
 export function activate(context: vscode.ExtensionContext) {
   const reg = (id: string, fn: (...a: any[]) => any) =>
@@ -16,6 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
     else vscode.window.showInformationMessage(vscode.l10n.t('Read Aloud: no active player. Run "Read Aloud: Read Document" to start.'));
   });
   reg('markdownReadAloud.openPlayer', () => readDocument(context));
+  reg('markdownReadAloud.exportAudio', (uriArg?: vscode.Uri) => exportDocumentAudio(uriArg));
   reg('markdownReadAloud.checkSupertonic', () => checkSupertonic());
 }
 

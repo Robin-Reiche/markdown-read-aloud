@@ -5,6 +5,7 @@
   "cmd.togglePlayPause.title": "朗读：播放 / 暂停",
   "cmd.stop.title": "朗读：停止",
   "cmd.openPlayer.title": "朗读：打开播放器",
+  "cmd.exportAudio.title": "Read Aloud: 将文档导出为音频文件",
   "cmd.checkSupertonic.title": "朗读：检查本地 Supertonic 服务器",
   "config.title": "Markdown Read Aloud",
   "config.engine.description": "使用哪个文本转语音引擎。Edge 会将朗读的文本发送到 Microsoft 的在线朗读服务；Supertonic 和系统语音则完全在本机运行。这是用户级别的信任决定，工作区设置无法更改它。",
@@ -28,5 +29,7 @@
   "config.openLocation.description": "朗读窗口的打开位置。",
   "config.openLocation.enum.beside": "拆分编辑器，在文档旁边的新列中打开阅读器",
   "config.openLocation.enum.active": "在当前编辑器组中以标签页方式打开阅读器，不拆分",
+  "config.exportFolder.description": "导出音频文件的文件夹。留空表示「下载」文件夹。`~` 会被展开。",
+  "config.exportConcurrency.description": "导出时并行合成的句子数 (1–8)。数值越大越快，越小对语音服务越温和。",
   "config.pronunciations.description": "在语音合成前应用的发音替换。键为单词（整词匹配、不区分大小写）或字面子串；值为实际朗读的内容，例如 `{ \"nginx\": \"engine x\" }`。放入工作区设置可让整个团队共享项目词典。"
 }

@@ -5,6 +5,7 @@
   "cmd.togglePlayPause.title": "Read Aloud: Play / Pause",
   "cmd.stop.title": "Read Aloud: Stop",
   "cmd.openPlayer.title": "Read Aloud: Open Player",
+  "cmd.exportAudio.title": "Read Aloud: Export Document as Audio File",
   "cmd.checkSupertonic.title": "Read Aloud: Check Local Supertonic Server",
   "config.title": "Markdown Read Aloud",
   "config.engine.description": "Which text-to-speech engine to use. Edge sends the text being read to Microsoft's online read-aloud service; Supertonic and System voices stay on this machine. This is a user-level trust decision, so workspace settings cannot change it.",
@@ -28,5 +29,7 @@
   "config.openLocation.description": "Where the reader window opens.",
   "config.openLocation.enum.beside": "Split the editor and open the reader in a new column next to the document",
   "config.openLocation.enum.active": "Open the reader as a tab in the current editor group, without splitting",
+  "config.exportFolder.description": "Folder for exported audio files. Empty means your Downloads folder. `~` is expanded.",
+  "config.exportConcurrency.description": "How many sentences to synthesize in parallel when exporting (1–8). Higher is faster; lower is gentler on the voice service.",
   "config.pronunciations.description": "Pronunciation overrides applied before speech synthesis. Keys are words (matched case-insensitively on word boundaries) or literal substrings; values are what gets spoken instead — e.g. `{ \"nginx\": \"engine x\", \"kubectl\": \"kube control\" }`. Put it in workspace settings to share a project dictionary with your team."
 }

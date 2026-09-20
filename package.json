@@ -2,7 +2,7 @@
   "name": "markdown-read-aloud",
   "displayName": "Markdown Read Aloud — Free Neural Text-to-Speech",
   "description": "Read Markdown files aloud with free, high-quality neural voices — no API key, no sign-up. Text-to-speech (TTS) with automatic language detection across 75 languages, live 0.5×–2.5× speed, read from cursor/selection/heading, and sentence highlighting. Great for proofreading and listening to docs and READMEs.",
-  "version": "1.15.0",
+  "version": "1.16.0",
   "publisher": "RobinReiche",
   "license": "MIT",
   "repository": {
@@ -94,6 +94,11 @@
         "title": "%cmd.openPlayer.title%"
       },
       {
+        "command": "markdownReadAloud.exportAudio",
+        "title": "%cmd.exportAudio.title%",
+        "icon": "$(cloud-download)"
+      },
+      {
         "command": "markdownReadAloud.checkSupertonic",
         "title": "%cmd.checkSupertonic.title%"
       }
@@ -103,7 +108,19 @@
         {
           "command": "markdownReadAloud.readDocument",
           "when": "resourceLangId == markdown",
-          "group": "navigation"
+          "group": "navigation@1"
+        },
+        {
+          "command": "markdownReadAloud.exportAudio",
+          "when": "resourceLangId == markdown",
+          "group": "navigation@2"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "markdownReadAloud.exportAudio",
+          "when": "resourceLangId == markdown",
+          "group": "navigation@9"
         }
       ],
       "editor/context": [
@@ -116,6 +133,11 @@
           "command": "markdownReadAloud.readSelection",
           "when": "editorLangId == markdown && editorHasSelection",
           "group": "navigation@9"
+        },
+        {
+          "command": "markdownReadAloud.exportAudio",
+          "when": "editorLangId == markdown",
+          "group": "navigation@10"
         }
       ],
       "commandPalette": [
@@ -130,6 +152,10 @@
         {
           "command": "markdownReadAloud.readSelection",
           "when": "editorLangId == markdown"
+        },
+        {
+          "command": "markdownReadAloud.exportAudio",
+          "when": "resourceLangId == markdown"
         }
       ]
     },
@@ -257,6 +283,20 @@
           ],
           "default": "beside",
           "description": "%config.openLocation.description%"
+        },
+        "markdownReadAloud.exportFolder": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "markdownDescription": "%config.exportFolder.description%"
+        },
+        "markdownReadAloud.exportConcurrency": {
+          "type": "number",
+          "default": 4,
+          "minimum": 1,
+          "maximum": 8,
+          "scope": "application",
+          "description": "%config.exportConcurrency.description%"
         },
         "markdownReadAloud.pronunciations": {
           "type": "object",

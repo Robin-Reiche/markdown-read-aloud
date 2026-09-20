@@ -5,6 +5,7 @@
   "cmd.togglePlayPause.title": "Vorlesen: Wiedergabe / Pause",
   "cmd.stop.title": "Vorlesen: Stopp",
   "cmd.openPlayer.title": "Vorlesen: Player öffnen",
+  "cmd.exportAudio.title": "Read Aloud: Dokument als Audiodatei exportieren",
   "cmd.checkSupertonic.title": "Vorlesen: Lokalen Supertonic-Server prüfen",
   "config.title": "Markdown Read Aloud",
   "config.engine.description": "Welche Text-zu-Sprache-Engine verwendet wird. Edge sendet den vorgelesenen Text an Microsofts Online-Vorlesedienst; Supertonic und Systemstimmen bleiben auf diesem Rechner. Dies ist eine Vertrauensentscheidung auf Benutzerebene, Arbeitsbereichseinstellungen können sie nicht ändern.",
@@ -28,5 +29,7 @@
   "config.openLocation.description": "Wo sich das Lesefenster öffnet.",
   "config.openLocation.enum.beside": "Den Editor teilen und den Reader in einer neuen Spalte neben dem Dokument öffnen",
   "config.openLocation.enum.active": "Den Reader als Tab in der aktuellen Editor-Gruppe öffnen, ohne zu teilen",
+  "config.exportFolder.description": "Ordner für exportierte Audiodateien. Leer bedeutet den Downloads-Ordner. `~` wird aufgelöst.",
+  "config.exportConcurrency.description": "Wie viele Sätze beim Export parallel synthetisiert werden (1–8). Höher ist schneller, niedriger schont den Sprachdienst.",
   "config.pronunciations.description": "Aussprache-Korrekturen, die vor der Sprachsynthese angewendet werden. Schlüssel sind Wörter (ganze Wörter, Groß-/Kleinschreibung egal) oder Zeichenketten; Werte sind das, was stattdessen gesprochen wird — z. B. `{ \"nginx\": \"engine x\", \"kubectl\": \"kube control\" }`. In den Workspace-Einstellungen teilt das ganze Team ein Projektwörterbuch."
 }

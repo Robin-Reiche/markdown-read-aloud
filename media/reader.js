@@ -8,6 +8,7 @@
     theme:'Theme', themeAuto:'Follow VS Code', themeStudy:'Study', themeDaylight:'Daylight', themePaper:'Paper',
     ambient:'Ambient focus', badges:'Show language badges', readSection:'Read section', settings:'More settings',
     reading:'Reading', playback:'Playback', minShort:'~{0} min', edit:'Edit source',
+    download:'Download as audio file',
     collapseAll:'Collapse all sections', expandAll:'Expand all sections', toggleSection:'Toggle section',
     backToReading:'Back to reading', startOver:'Start over', resumed:'Resumed where you left off',
     sleepTimer:'Sleep timer', off:'Off', untilSectionEnd:'Until end of section',
@@ -82,6 +83,7 @@
     gear:'<svg viewBox="0 0 24 24"><path d="M19.14 12.94a7.49 7.49 0 000-1.88l2.03-1.58a.5.5 0 00.12-.64l-1.92-3.32a.5.5 0 00-.6-.22l-2.39.96a7.3 7.3 0 00-1.62-.94l-.36-2.54a.5.5 0 00-.5-.42h-3.84a.5.5 0 00-.5.42l-.36 2.54c-.58.24-1.12.55-1.62.94l-2.39-.96a.5.5 0 00-.6.22L2.71 8.84a.5.5 0 00.12.64l2.03 1.58a7.49 7.49 0 000 1.88l-2.03 1.58a.5.5 0 00-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.5.39 1.04.7 1.62.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.58-.24 1.12-.55 1.62-.94l2.39.96c.21.09.47 0 .6-.22l1.92-3.32a.5.5 0 00-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1112 8.5a3.5 3.5 0 010 7z"/></svg>',
     down:'<svg viewBox="0 0 24 24"><path d="M12 16l-6-6h12z"/></svg>',
     edit:'<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>',
+    download:'<svg viewBox="0 0 24 24"><path d="M11 3h2v8.6l3.3-3.3 1.4 1.4L12 15.4 6.3 9.7l1.4-1.4L11 11.6V3z"/><path d="M5 18h14v2H5z"/></svg>',
     playSm:'<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
   };
   const SPK = '<svg viewBox="0 0 24 24"><path d="M4 9v6h3.6L13 20V4L7.6 9H4z"/><path d="M16 8.6a4 4 0 010 6.8M18.4 6a7 7 0 010 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
@@ -101,6 +103,7 @@
           <button class="btn" data-act="prev" title="${esc(L.prev)} (←)" aria-label="${esc(L.prev)}">${I.prev}</button>
           <button class="btn play" data-act="toggle" aria-pressed="false" aria-label="${esc(L.play)}" title="${esc(L.play)} (Space)">${I.play}</button>
           <button class="btn" data-act="next" title="${esc(L.next)} (→)" aria-label="${esc(L.next)}">${I.next}</button>
+          <button class="btn dl" data-act="download" title="${esc(L.download)}" aria-label="${esc(L.download)}">${I.download}</button>
         </div>
         <div class="title-block">
           <div class="doc-title" id="doctitle">${esc(L.title)}</div>
@@ -867,6 +870,7 @@
       else if (a === 'prev') playAt(state.idx - 1);
       else if (a === 'next') playAt(state.idx + 1);
       else if (a === 'gear') togglePop($('pop'), el);
+      else if (a === 'download') post({ type:'exportAudio' });
       else if (a === 'edit') {
         const seg = SEGMENTS[state.idx];
         const lineEl = seg && seg.el.closest ? seg.el.closest('[data-line]') : null;

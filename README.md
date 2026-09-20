@@ -105,6 +105,32 @@ Hearing your own text catches the mistakes your eyes skip. When you hear one:
   (`markdownReadAloud.pronunciations`, e.g. `{ "nginx": "engine x" }`) — put it in
   workspace settings and your whole team shares it.
 
+## Take it with you — export to MP3
+
+Click the **⬇ download button in the reader**, just after the play/next controls — or the
+one in the **editor toolbar** next to the speaker that starts reading (or run **"Read Aloud: Export Document as Audio File"** from the Command Palette,
+the editor's right-click menu, or a right-click on a `.md` file in the Explorer). The
+whole document is rendered to one audio file named after it: `release-notes.md` becomes
+`release-notes.mp3`. Copy it to a phone and listen on a commute, at the gym, or anywhere
+without the editor.
+
+You are shown where it will be saved before anything is written — your **Downloads**
+folder by default, with **Save As…** for a one-off location and **Change default
+folder…** to save there and remember it.
+
+- Same blocks, same sentence split, same voice selection the reader uses — your
+  `codeBlocks`, `tables`, `announceHeadings`, pronunciation and voice settings all apply.
+- The MP3 carries an **ID3 title**, so it shows a real name in a phone's player.
+- **Progress is shown and the export is cancellable.** Sentences that fail to synthesize
+  are skipped and counted in the final message rather than failing the whole export.
+- `markdownReadAloud.exportConcurrency` (default 4) trades speed against how hard the
+  export leans on the voice service.
+
+Export needs an engine that produces audio in the extension host: **Edge** writes MP3 and
+**Supertonic** writes WAV (nothing here re-encodes audio). System voices are synthesized
+inside the reader's webview and hand the extension no audio data, so with that engine
+selected the export asks before using Edge instead of quietly going online.
+
 ## Accessibility & proofreading
 
 Hearing text instead of reading it helps with **dyslexia, low vision and reading
@@ -219,6 +245,8 @@ supertonic info      # model files live in ~/.cache/supertonic3
 | `markdownReadAloud.highlightWhileReading` | `true` | Highlight the current sentence in the reader. |
 | `markdownReadAloud.openLocation` | `beside` | Where the reader opens. `beside` splits the editor into a second column, `active` opens it as a tab in the current editor group. Applies the next time the reader opens. |
 | `markdownReadAloud.volume` | `1.0` | Default playback volume (0–1). |
+| `markdownReadAloud.exportFolder` | `""` | Folder for exported audio files. Empty = your Downloads folder. `~` is expanded. |
+| `markdownReadAloud.exportConcurrency` | `4` | Sentences synthesized in parallel when exporting (1–8). |
 | `markdownReadAloud.pronunciations` | `{}` | Pronunciation overrides, e.g. `{ "nginx": "engine x", "kubectl": "kube control" }`. |
 
 ## Privacy & note on the Edge engine

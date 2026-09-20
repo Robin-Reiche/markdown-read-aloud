@@ -5,6 +5,7 @@
   "cmd.togglePlayPause.title": "Ler em voz alta: reproduzir / pausar",
   "cmd.stop.title": "Ler em voz alta: parar",
   "cmd.openPlayer.title": "Ler em voz alta: abrir o player",
+  "cmd.exportAudio.title": "Read Aloud: Exportar o documento como arquivo de áudio",
   "cmd.checkSupertonic.title": "Ler em voz alta: Verificar o servidor local do Supertonic",
   "config.title": "Markdown Read Aloud",
   "config.engine.description": "Qual mecanismo de conversão de texto em fala usar. O Edge envia o texto lido ao serviço de leitura online da Microsoft; o Supertonic e as vozes do sistema permanecem nesta máquina. É uma decisão de confiança no nível do usuário, então as configurações do workspace não podem alterá-la.",
@@ -28,5 +29,7 @@
   "config.openLocation.description": "Onde a janela de leitura é aberta.",
   "config.openLocation.enum.beside": "Dividir o editor e abrir o leitor em uma nova coluna ao lado do documento",
   "config.openLocation.enum.active": "Abrir o leitor como aba no grupo de editores atual, sem dividir",
+  "config.exportFolder.description": "Pasta para os arquivos de áudio exportados. Vazio significa a pasta Downloads. `~` é expandido.",
+  "config.exportConcurrency.description": "Quantas frases sintetizar em paralelo ao exportar (1–8). Maior é mais rápido; menor é mais gentil com o serviço de voz.",
   "config.pronunciations.description": "Substituições de pronúncia aplicadas antes da síntese de fala. As chaves são palavras (palavra inteira, sem diferenciar maiúsculas) ou substrings literais; os valores são o que será falado no lugar — ex.: `{ \"nginx\": \"engine x\" }`. Nas configurações do workspace, toda a equipe compartilha o dicionário do projeto."
 }
