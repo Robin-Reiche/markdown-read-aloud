@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **A short note after an update.** When an update brings new features, one small
+  message says so. **What's New** opens the changelog and **Buy Me a Coffee** leads to
+  Ko-fi for anyone who wants to support the work. The note comes once per feature release
+  and never after a bug fix or a first install. **Don't Show Again** turns it off for good.
+
 ## 1.16.0 — 2026-09-21
 
 **Export a document to a single audio file**, so a long README or set of notes can go

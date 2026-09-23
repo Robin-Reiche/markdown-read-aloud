@@ -3,6 +3,7 @@ import { PlayerPanel } from './player/playerPanel';
 import { SupertonicHttpEngine } from './engines/supertonicHttpEngine';
 import { titleFor } from './reader';
 import { exportDocumentAudio } from './export/exportAudio';
+import { showUpdateNote } from './updateNote';
 
 export function activate(context: vscode.ExtensionContext) {
   const reg = (id: string, fn: (...a: any[]) => any) =>
@@ -19,6 +20,7 @@ export function activate(context: vscode.ExtensionContext) {
   reg('markdownReadAloud.openPlayer', () => readDocument(context));
   reg('markdownReadAloud.exportAudio', (uriArg?: vscode.Uri) => exportDocumentAudio(uriArg));
   reg('markdownReadAloud.checkSupertonic', () => checkSupertonic());
+  void showUpdateNote(context);
 }
 
 /** Verify the local Supertonic server is reachable. Sends no document text. */

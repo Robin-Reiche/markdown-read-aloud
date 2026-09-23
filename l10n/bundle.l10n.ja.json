@@ -90,5 +90,9 @@
   "Read Aloud: exporting audio": "音声読み上げ: 音声を書き出し中",
   "{0} of {1} sentences": "{0} / {1} 文",
   "Read Aloud: synthesis failed ({0}).": "音声読み上げ: 合成に失敗しました ({0})。",
-  "unknown error": "不明なエラー"
+  "unknown error": "不明なエラー",
+  "Markdown Read Aloud was updated to {0}. If it saves you time, a coffee on Ko-fi helps keep it free.": "Markdown Read Aloud が {0} に更新されました。時間の節約に役立っているなら、Ko-fi でコーヒーを1杯おごっていただけると、無料のまま続けられます。",
+  "What's New": "新機能",
+  "Buy Me a Coffee": "コーヒーをおごる",
+  "Don't Show Again": "今後表示しない"
 }

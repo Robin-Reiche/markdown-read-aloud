@@ -90,5 +90,9 @@
   "Read Aloud: exporting audio": "朗读：正在导出音频",
   "{0} of {1} sentences": "第 {0} 句，共 {1} 句",
   "Read Aloud: synthesis failed ({0}).": "朗读：合成失败（{0}）。",
-  "unknown error": "未知错误"
+  "unknown error": "未知错误",
+  "Markdown Read Aloud was updated to {0}. If it saves you time, a coffee on Ko-fi helps keep it free.": "Markdown Read Aloud 已更新到 {0}。如果它为你节省了时间，在 Ko-fi 上请我喝杯咖啡，可以帮助它继续免费。",
+  "What's New": "新功能",
+  "Buy Me a Coffee": "请我喝杯咖啡",
+  "Don't Show Again": "不再显示"
 }

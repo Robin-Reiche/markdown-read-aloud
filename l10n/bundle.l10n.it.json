@@ -90,5 +90,9 @@
   "Read Aloud: exporting audio": "Lettura ad alta voce: esportazione audio",
   "{0} of {1} sentences": "{0} di {1} frasi",
   "Read Aloud: synthesis failed ({0}).": "Lettura ad alta voce: sintesi non riuscita ({0}).",
-  "unknown error": "errore sconosciuto"
+  "unknown error": "errore sconosciuto",
+  "Markdown Read Aloud was updated to {0}. If it saves you time, a coffee on Ko-fi helps keep it free.": "Markdown Read Aloud è stato aggiornato alla versione {0}. Se ti fa risparmiare tempo, un caffè su Ko-fi aiuta a mantenerlo gratuito.",
+  "What's New": "Novità",
+  "Buy Me a Coffee": "Offrimi un caffè",
+  "Don't Show Again": "Non mostrare più"
 }
