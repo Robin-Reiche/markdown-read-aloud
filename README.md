@@ -3,6 +3,7 @@
 [![Rating](https://vsmarketplacebadges.dev/rating-star/RobinReiche.markdown-read-aloud.svg?color=0C9488&style=flat)](https://marketplace.visualstudio.com/items?itemName=RobinReiche.markdown-read-aloud&ssr=false#review-details)
 [![CI](https://github.com/Robin-Reiche/markdown-read-aloud/actions/workflows/ci.yml/badge.svg)](https://github.com/Robin-Reiche/markdown-read-aloud/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0C9488.svg)](LICENSE)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-buy%20me%20a%20coffee-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/robinreiche)
 
 # Markdown Read Aloud
 
