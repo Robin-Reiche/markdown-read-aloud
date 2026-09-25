@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.17.0 — 2026-09-25
 
 - **A short note after an update.** When an update brings new features, one small
   message says so. **What's New** opens the changelog and **Buy Me a Coffee** leads to
