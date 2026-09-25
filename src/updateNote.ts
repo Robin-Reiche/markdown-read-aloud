@@ -3,7 +3,7 @@ import { isFeatureUpdate } from './featureUpdate';
 
 const LAST_VERSION_KEY = 'markdownReadAloud.lastVersion';
 const NOTE_OFF_KEY = 'markdownReadAloud.updateNoteOff';
-const KOFI_URL = 'https://ko-fi.com/robinreiche';
+export const KOFI_URL = 'https://ko-fi.com/robinreiche';
 
 /**
  * After an update to a new feature release, says so once, with a way to the

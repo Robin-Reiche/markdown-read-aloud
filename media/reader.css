@@ -274,6 +274,15 @@ body.vscode-high-contrast .seg.speaking { background: var(--vscode-editor-select
   border-radius: var(--r-sm); padding: .45rem .6rem; font: inherit; font-size: .82rem; cursor: pointer; width: 100%; }
 .pop select:disabled { opacity: .5; }
 .pop .hint { font-size: .7rem; color: var(--ink-faint); line-height: 1.45; }
+/* The way to Ko-fi, here for good once the note after an update is closed. A button,
+   not a link: a link would navigate the reader's own page away, so the extension opens
+   the address in the browser instead. It takes the popover's colors like the rows above. */
+.pop .support { display: flex; align-items: center; gap: .5rem; width: 100%; margin-top: -.25rem; padding: .7rem .6rem .1rem;
+  background: none; border: 0; border-top: 1px solid var(--rule); color: var(--ink-soft); font: inherit; font-size: .8rem;
+  text-align: left; cursor: pointer; transition: color var(--dur) var(--ease); }
+.pop .support:hover { color: var(--ink); }
+.pop .support:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.pop .support svg { width: 16px; height: 16px; flex: 0 0 auto; fill: currentColor; }
 
 input[type="range"] { -webkit-appearance: none; appearance: none; width: 90px; height: 3px; background: var(--rule-strong); border-radius: 99px; cursor: pointer; }
 input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 99px; background: var(--accent); border: 2px solid var(--surface); }

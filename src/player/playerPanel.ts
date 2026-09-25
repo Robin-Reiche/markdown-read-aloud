@@ -12,6 +12,7 @@ import { renderMarkdownHtml } from '../markdown/render';
 import { normalizeForSpeech, applyPronunciations } from '../markdown/normalize';
 import { detectLocale, detectReliableLocale } from '../languageDetector';
 import { exportDocumentAudio } from '../export/exportAudio';
+import { KOFI_URL } from '../updateNote';
 import {
   allCuratedLocales,
   curatedPair,
@@ -280,6 +281,11 @@ export class PlayerPanel {
         break;
       case 'exportAudio':
         await exportDocumentAudio(this.docUri);
+        break;
+      // The Ko-fi entry at the bottom of the settings popover. The address is
+      // fixed here, the webview only asks for it to be opened.
+      case 'openSupport':
+        void vscode.env.openExternal(vscode.Uri.parse(KOFI_URL));
         break;
       case 'persistPrefs':
         if (m.prefs && typeof m.prefs === 'object') {
@@ -646,6 +652,8 @@ export class PlayerPanel {
       fontSansSub: vscode.l10n.t('clean sans'),
       fontA11ySub: vscode.l10n.t('max legibility'),
       fontMonoSub: vscode.l10n.t('calm, technical'),
+      support: vscode.l10n.t('Buy me a coffee on Ko-fi'),
+      supportHint: vscode.l10n.t('Opens ko-fi.com/robinreiche in the browser'),
     };
   }
 

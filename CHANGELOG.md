@@ -6,6 +6,8 @@
   message says so. **What's New** opens the changelog and **Buy Me a Coffee** leads to
   Ko-fi for anyone who wants to support the work. The note comes once per feature release
   and never after a bug fix or a first install. **Don't Show Again** turns it off for good.
+  Closed by accident, the way to Ko-fi is still there at the bottom of the reader's
+  settings popover, as **Buy me a coffee on Ko-fi**.
 
 ## 1.16.0 — 2026-09-21
 

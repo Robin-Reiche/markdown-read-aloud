@@ -16,6 +16,7 @@
     progress:'Progress', nothingToRead:'Nothing readable in this document.',
     openInEditor:'Alt+Click a sentence to open it in the editor',
     fontSerifSub:'warm serif', fontSansSub:'clean sans', fontA11ySub:'max legibility', fontMonoSub:'calm, technical',
+    support:'Buy me a coffee on Ko-fi', supportHint:'Opens ko-fi.com/robinreiche in the browser',
   }, window.__l10n || {});
 
   const RM = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -85,6 +86,7 @@
     edit:'<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>',
     download:'<svg viewBox="0 0 24 24"><path d="M11 3h2v8.6l3.3-3.3 1.4 1.4L12 15.4 6.3 9.7l1.4-1.4L11 11.6V3z"/><path d="M5 18h14v2H5z"/></svg>',
     playSm:'<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
+    coffee:'<svg viewBox="0 0 24 24"><path d="M4 8h13v5a6 6 0 01-6 6h-1a6 6 0 01-6-6V8zm13 1h1.5a3 3 0 010 6H17v-2h1.5a1 1 0 000-2H17V9zM3 20.5h15V22H3z"/></svg>',
   };
   const SPK = '<svg viewBox="0 0 24 24"><path d="M4 9v6h3.6L13 20V4L7.6 9H4z"/><path d="M16 8.6a4 4 0 010 6.8M18.4 6a7 7 0 010 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
   const SPK_MUTE = '<svg viewBox="0 0 24 24"><path d="M4 9v6h3.6L13 20V4L7.6 9H4z"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
@@ -147,6 +149,7 @@
           <div class="mini-row"><button class="btn" id="collapse-all" title="${esc(L.collapseAll)}" aria-label="${esc(L.collapseAll)}">−</button><button class="btn" id="expand-all" title="${esc(L.expandAll)}" aria-label="${esc(L.expandAll)}">+</button></div>
           <span class="hint">${esc(L.openInEditor)}</span>
         </div>
+        <button class="support" id="support" type="button" title="${esc(L.supportHint)}">${I.coffee} ${esc(L.support)}</button>
       </div>
 
       <div class="pop mini" id="spop" role="dialog" aria-label="${esc(L.speed)}">
@@ -892,6 +895,7 @@
     $('expand-all').onclick = () => document.querySelectorAll('#doc h1,#doc h2,#doc h3').forEach((h) => toggleCollapse(h, false));
     $('follow-btn').onclick = () => attachFollow();
     $('startover-btn').onclick = () => { hideResumePill(); playAt(0); };
+    $('support').onclick = () => post({ type:'openSupport' });
 
     const rate = $('rate');
     rate.oninput = (e) => setRate(parseFloat(e.target.value), true);
