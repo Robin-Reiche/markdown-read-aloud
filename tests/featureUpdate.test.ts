@@ -6,6 +6,10 @@ test('stays quiet after a first install', () => {
   assert.equal(isFeatureUpdate(undefined, '1.16.0'), false);
 });
 
+test('speaks up after an update from a version that did not store its version', () => {
+  assert.equal(isFeatureUpdate(undefined, '1.17.0', true), true);
+});
+
 test('stays quiet after a bug-fix release', () => {
   assert.equal(isFeatureUpdate('1.16.0', '1.16.1'), false);
 });

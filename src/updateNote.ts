@@ -14,9 +14,15 @@ export async function showUpdateNote(context: vscode.ExtensionContext): Promise<
   const current: string = context.extension.packageJSON.version;
   const previous = context.globalState.get<string>(LAST_VERSION_KEY);
   if (previous === current) return;
+  // Versions up to 1.16 stored reader preferences once changed and reading
+  // positions per workspace. Someone with neither looks like a first install
+  // and gets the first note with the next feature release.
+  const usedBefore = [...context.globalState.keys(), ...context.workspaceState.keys()].some((key) =>
+    key.startsWith('markdownReadAloud.')
+  );
   // Stored before asking, so a note left unanswered does not come back on the next start.
   await context.globalState.update(LAST_VERSION_KEY, current);
-  if (!isFeatureUpdate(previous, current) || context.globalState.get<boolean>(NOTE_OFF_KEY)) return;
+  if (!isFeatureUpdate(previous, current, usedBefore) || context.globalState.get<boolean>(NOTE_OFF_KEY)) return;
 
   const whatsNew = vscode.l10n.t("What's New");
   const coffee = vscode.l10n.t('Buy Me a Coffee');
