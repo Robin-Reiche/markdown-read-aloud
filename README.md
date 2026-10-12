@@ -61,6 +61,12 @@ Russian, Japanese, Chinese, Korean and more. No setting to flip. By default one
 consistent voice reads the whole document (easiest to follow); for mixed-language files
 you can switch the voice **per paragraph** to match each paragraph's language.
 
+Voices marked **multilingual** in the voice list (including the defaults for English,
+German and French) pick up a sentence in another language on their own and pronounce it
+in that language, even with per-paragraph switching off. The voice stays the same, only
+the pronunciation changes. If you want one language throughout, pick a voice without
+that label.
+
 ## Read aloud from cursor, selection, or any heading
 
 1. Open a Markdown file.
@@ -237,7 +243,7 @@ supertonic info      # model files live in ~/.cache/supertonic3
 | `markdownReadAloud.preferredGender` | `female` | Default voice gender. |
 | `markdownReadAloud.speed` | `1.0` | Default playback speed (0.5–2.5). |
 | `markdownReadAloud.autoDetectLanguage` | `true` | Detect the document's main language and pick a matching voice. |
-| `markdownReadAloud.perParagraphLanguage` | `false` | Switch voice per paragraph to match each paragraph's language (mixed-language docs). Off = one consistent voice (easier to follow). |
+| `markdownReadAloud.perParagraphLanguage` | `false` | Switch voice per paragraph to match each paragraph's language (mixed-language docs). Off = one consistent voice (easier to follow). Multilingual voices still pronounce other-language sentences in that language. |
 | `markdownReadAloud.fallbackLanguage` | `en-US` | Used when detection is unreliable. |
 | `markdownReadAloud.voiceOverrides` | `{}` | Per-language voice override, e.g. `{ "de-DE": "de-DE-KatjaNeural" }`. |
 | `markdownReadAloud.announceHeadings` | `false` | Say "Heading" before headings. |

@@ -16,7 +16,7 @@
   "config.speed.description": "Standard-Wiedergabegeschwindigkeit (0.5×–2.5×). Im Player live anpassbar.",
   "config.volume.description": "Standard-Wiedergabelautstärke (0–1). Im Player live anpassbar.",
   "config.autoDetectLanguage.description": "Die Hauptsprache des Dokuments automatisch erkennen und eine passende Stimme wählen.",
-  "config.perParagraphLanguage.description": "Die Stimme pro Absatz wechseln, passend zur Sprache jedes Absatzes (für mehrsprachige Dokumente). Standardmäßig aus: einer durchgehenden Stimme lässt sich leichter folgen. Im Player live umschaltbar.",
+  "config.perParagraphLanguage.description": "Die Stimme pro Absatz wechseln, passend zur Sprache jedes Absatzes (für mehrsprachige Dokumente). Standardmäßig aus: einer durchgehenden Stimme lässt sich leichter folgen. Im Player live umschaltbar. Hinweis: Stimmen, die in der Stimmenliste als „mehrsprachig“ markiert sind (darunter die Standardstimmen für Englisch, Deutsch und Französisch), sprechen einen Satz in einer anderen Sprache auch bei ausgeschalteter Option in dieser Sprache aus. Für durchgehend eine Sprache wählen Sie eine Stimme ohne diese Markierung.",
   "config.fallbackLanguage.description": "Sprache (BCP-47), die verwendet wird, wenn die Erkennung unzuverlässig oder nicht unterstützt ist.",
   "config.voiceOverrides.description": "Erweitert: Stimme pro Sprache überschreiben, z. B. `{ \"de-DE\": \"de-DE-KatjaNeural\" }`. Öffne den Player, um die Stimmen-IDs zu sehen.",
   "config.announceHeadings.description": "Vor jeder Überschrift „Überschrift“ ansagen. Standardmäßig aus (wird mit der Zeit eintönig).",

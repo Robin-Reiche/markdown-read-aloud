@@ -16,7 +16,7 @@
   "config.speed.description": "Velocidad de reproducción predeterminada (0.5×–2.5×). Ajustable en directo en el reproductor.",
   "config.volume.description": "Volumen de reproducción predeterminado (0–1). Ajustable en directo en el reproductor.",
   "config.autoDetectLanguage.description": "Detecta automáticamente el idioma principal del documento y elige una voz que coincida.",
-  "config.perParagraphLanguage.description": "Cambia la voz por párrafo para coincidir con el idioma de cada uno (para documentos multilingües). Desactivado de forma predeterminada: una sola voz constante es más fácil de seguir. Se puede activar en directo en el reproductor.",
+  "config.perParagraphLanguage.description": "Cambia la voz por párrafo para coincidir con el idioma de cada uno (para documentos multilingües). Desactivado de forma predeterminada: una sola voz constante es más fácil de seguir. Se puede activar en directo en el reproductor. Nota: las voces marcadas como «multilingüe» en la lista de voces (incluidas las predeterminadas para inglés, alemán y francés) pronuncian una frase en otro idioma con la pronunciación de ese idioma, aunque esta opción esté desactivada. Para un solo idioma en todo el documento, elige una voz sin esa marca.",
   "config.fallbackLanguage.description": "Idioma (BCP-47) que se usará cuando la detección no sea fiable o no sea compatible.",
   "config.voiceOverrides.description": "Avanzado: define manualmente la voz por idioma, p. ej. `{ \"de-DE\": \"de-DE-KatjaNeural\" }`. Abre el reproductor para ver los identificadores de voz.",
   "config.announceHeadings.description": "Decir «Encabezado» antes de cada encabezado. Desactivado de forma predeterminada (resulta repetitivo).",

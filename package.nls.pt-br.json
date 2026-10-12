@@ -16,7 +16,7 @@
   "config.speed.description": "Velocidade de reprodução padrão (0.5×–2.5×). Ajustável ao vivo no player.",
   "config.volume.description": "Volume de reprodução padrão (0–1). Ajustável ao vivo no player.",
   "config.autoDetectLanguage.description": "Detectar automaticamente o idioma principal do documento e escolher uma voz compatível.",
-  "config.perParagraphLanguage.description": "Alternar a voz por parágrafo para corresponder ao idioma de cada parágrafo (para documentos multilíngues). Desativado por padrão: uma voz consistente é mais fácil de acompanhar. Alterne ao vivo no player.",
+  "config.perParagraphLanguage.description": "Alternar a voz por parágrafo para corresponder ao idioma de cada parágrafo (para documentos multilíngues). Desativado por padrão: uma voz consistente é mais fácil de acompanhar. Alterne ao vivo no player. Observação: vozes marcadas como \"multilíngue\" na lista de vozes (incluindo as padrão para inglês, alemão e francês) pronunciam uma frase em outro idioma com a pronúncia desse idioma, mesmo com esta opção desativada. Para um único idioma do início ao fim, escolha uma voz sem essa marcação.",
   "config.fallbackLanguage.description": "Idioma (BCP-47) a usar quando a detecção for imprecisa ou sem suporte.",
   "config.voiceOverrides.description": "Avançado: substitua a voz por idioma, ex.: `{ \"de-DE\": \"de-DE-KatjaNeural\" }`. Abra o player para ver os IDs das vozes.",
   "config.announceHeadings.description": "Dizer \"Título\" antes de cada título. Desativado por padrão (fica repetitivo).",

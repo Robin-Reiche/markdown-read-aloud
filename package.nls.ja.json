@@ -16,7 +16,7 @@
   "config.speed.description": "既定の再生速度（0.5×–2.5×）。プレーヤーで再生中に調整できます。",
   "config.volume.description": "既定の再生音量（0–1）。プレーヤーで再生中に調整できます。",
   "config.autoDetectLanguage.description": "ドキュメントの主な言語を自動的に検出し、それに合う音声を選びます。",
-  "config.perParagraphLanguage.description": "段落ごとに音声を切り替えて、各段落の言語に合わせます（多言語ドキュメント向け）。既定はオフ: 一貫した 1 つの音声のほうが聞き取りやすいためです。プレーヤーで再生中に切り替えられます。",
+  "config.perParagraphLanguage.description": "段落ごとに音声を切り替えて、各段落の言語に合わせます（多言語ドキュメント向け）。既定はオフ: 一貫した 1 つの音声のほうが聞き取りやすいためです。プレーヤーで再生中に切り替えられます。注: 音声リストで「多言語」と表示される音声（英語、ドイツ語、フランス語の既定の音声を含む）は、この設定がオフでも、別の言語の文をその言語の発音で読み上げます。全体を 1 つの言語で読み上げるには、この表示のない音声を選んでください。",
   "config.fallbackLanguage.description": "検出が不確実、またはサポートされていない場合に使用する言語（BCP-47）。",
   "config.voiceOverrides.description": "詳細設定: 言語ごとに音声を上書きします。例: `{ \"de-DE\": \"de-DE-KatjaNeural\" }`。音声 ID を確認するにはプレーヤーを開いてください。",
   "config.announceHeadings.description": "各見出しの前に「見出し」と読み上げます。既定はオフ（繰り返しが多くなるため）。",

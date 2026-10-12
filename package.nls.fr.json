@@ -16,7 +16,7 @@
   "config.speed.description": "Vitesse de lecture par défaut (0.5×–2.5×). Réglable en direct dans le lecteur.",
   "config.volume.description": "Volume de lecture par défaut (0–1). Réglable en direct dans le lecteur.",
   "config.autoDetectLanguage.description": "Détecter automatiquement la langue principale du document et choisir une voix correspondante.",
-  "config.perParagraphLanguage.description": "Changer de voix par paragraphe pour correspondre à la langue de chaque paragraphe (documents multilingues). Désactivé par défaut : une voix unique et constante est plus facile à suivre. Activable en direct dans le lecteur.",
+  "config.perParagraphLanguage.description": "Changer de voix par paragraphe pour correspondre à la langue de chaque paragraphe (documents multilingues). Désactivé par défaut : une voix unique et constante est plus facile à suivre. Activable en direct dans le lecteur. Remarque : les voix marquées « multilingue » dans la liste des voix (dont les voix par défaut pour l'anglais, l'allemand et le français) prononcent une phrase dans une autre langue avec la prononciation de cette langue, même lorsque cette option est désactivée. Pour une seule langue du début à la fin, choisissez une voix sans cette mention.",
   "config.fallbackLanguage.description": "Langue (BCP-47) à utiliser lorsque la détection n'est pas fiable ou n'est pas prise en charge.",
   "config.voiceOverrides.description": "Avancé : remplacer la voix par langue, p. ex. `{ \"de-DE\": \"de-DE-KatjaNeural\" }`. Ouvrez le lecteur pour voir les identifiants de voix.",
   "config.announceHeadings.description": "Annoncer « Titre » avant chaque titre. Désactivé par défaut (devient répétitif).",

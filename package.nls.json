@@ -16,7 +16,7 @@
   "config.speed.description": "Default playback speed (0.5×–2.5×). Adjustable live in the player.",
   "config.volume.description": "Default playback volume (0–1). Adjustable live in the player.",
   "config.autoDetectLanguage.description": "Detect the document's main language automatically and pick a matching voice.",
-  "config.perParagraphLanguage.description": "Switch the voice per paragraph to match each paragraph's language (for mixed-language docs). Off by default: one consistent voice is easier to follow. Toggle live in the player.",
+  "config.perParagraphLanguage.description": "Switch the voice per paragraph to match each paragraph's language (for mixed-language docs). Off by default: one consistent voice is easier to follow. Toggle live in the player. Note: voices marked \"multilingual\" in the voice list (including the defaults for English, German and French) still read a sentence in another language with that language's pronunciation, even when this is off. For one language throughout, pick a voice without that label.",
   "config.fallbackLanguage.description": "Language (BCP-47) to use when detection is unreliable or unsupported.",
   "config.voiceOverrides.description": "Advanced: override the voice per language, e.g. `{ \"de-DE\": \"de-DE-KatjaNeural\" }`. Open the player to see voice IDs.",
   "config.announceHeadings.description": "Say \"Heading\" before each heading. Off by default (gets repetitive).",

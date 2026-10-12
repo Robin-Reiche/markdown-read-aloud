@@ -16,7 +16,7 @@
   "config.speed.description": "默认播放速度（0.5×–2.5×）。可在播放器中实时调整。",
   "config.volume.description": "默认播放音量（0–1）。可在播放器中实时调整。",
   "config.autoDetectLanguage.description": "自动检测文档的主要语言并选择匹配的语音。",
-  "config.perParagraphLanguage.description": "按段落切换语音，以匹配每个段落的语言（适用于多语言文档）。默认关闭：使用单一统一的语音更易于跟读。可在播放器中实时切换。",
+  "config.perParagraphLanguage.description": "按段落切换语音，以匹配每个段落的语言（适用于多语言文档）。默认关闭：使用单一统一的语音更易于跟读。可在播放器中实时切换。注意：语音列表中标为“多语言”的语音（包括英语、德语和法语的默认语音）即使在此选项关闭时，遇到其他语言的句子也会按该语言的发音朗读。如需全程使用一种语言，请选择没有此标记的语音。",
   "config.fallbackLanguage.description": "当检测不可靠或不受支持时使用的语言（BCP-47）。",
   "config.voiceOverrides.description": "高级：按语言覆盖语音，例如 `{ \"de-DE\": \"de-DE-KatjaNeural\" }`。打开播放器即可查看语音 ID。",
   "config.announceHeadings.description": "在每个标题前朗读“标题”。默认关闭（容易显得重复）。",
