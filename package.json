@@ -320,7 +320,7 @@
   },
   "dependencies": {
     "eld": "^2.0.3",
-    "msedge-tts": "^2.0.5",
+    "msedge-tts": "^2.1.0",
     "rehype-sanitize": "^6.0.0",
     "rehype-stringify": "^10.0.1",
     "remark-frontmatter": "^5.0.0",
