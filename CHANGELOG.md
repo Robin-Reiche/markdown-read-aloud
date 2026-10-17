@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.18.0 (2026-10-17)
 
 - **Read Aloud on chat customization files.** VS Code gives prompt, instruction, agent,
   chat mode and skill files their own language, for example `*.prompt.md`,
