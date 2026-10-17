@@ -14,6 +14,10 @@
   document (#5). Without any system voice, for example
   in VS Code on Linux, playback no longer hangs silently. A voice that fails twice in a row
   pauses with the reason.
+- **Edge voices keep working when Microsoft closes one way in.** Microsoft's voice service
+  can be reached two ways. In October one of them suddenly turned the extension away. Now
+  the extension switches to the other way on its own when one refuses or cannot be reached.
+  Playback and the audio export keep going.
 
 ## 1.17.1 (2026-10-17)
 

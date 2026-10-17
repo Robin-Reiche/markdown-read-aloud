@@ -1,8 +1,42 @@
+import { randomUUID } from 'node:crypto';
 import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import type { TtsEngine } from '../types';
+import { secMsGecV2 } from './edgeToken';
 
 const FORMAT = OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3;
 const SYNTH_TIMEOUT = 30000;
+
+/**
+ * Microsoft has two ways into the read-aloud service and has closed one of them
+ * before: in October 2026 speech.platform.bing.com started to refuse the v1
+ * token. msedge-tts only knows one way, so its URL builder is swapped for one
+ * that can also take the other, the old host with the v2 token of
+ * rany2/edge-tts. The route is shared by all engines, so after one switch the
+ * player and the export both stay on the way that works. Exported for
+ * tests/edgeEngine.test.ts and the daily check in scripts/edge-probe.ts.
+ */
+export const edgeRoute = {
+  current: 'msedgeservices' as 'msedgeservices' | 'bing',
+  bingUrl: 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1',
+};
+const BING_TOKEN_VERSION = '2-143.0.3650.75';
+// msedge-tts declares these private. tests/edgeEngine.test.ts fails when a new
+// version stops building its URL through getSynthUrl.
+const lib = MsEdgeTTS as unknown as {
+  getSynthUrl(): Promise<string>;
+  TRUSTED_CLIENT_TOKEN: string;
+  _clockOffsetMs: number;
+};
+const libSynthUrl = lib.getSynthUrl;
+lib.getSynthUrl = async () => {
+  if (edgeRoute.current === 'msedgeservices') return libSynthUrl.call(MsEdgeTTS);
+  const gec = secMsGecV2((Date.now() + (lib._clockOffsetMs || 0)) / 1000);
+  const id = randomUUID().replace(/-/g, '');
+  return (
+    `${edgeRoute.bingUrl}?TrustedClientToken=${lib.TRUSTED_CLIENT_TOKEN}&ConnectionId=${id}` +
+    `&Sec-MS-GEC=${gec}&Sec-MS-GEC-Version=${BING_TOKEN_VERSION}`
+  );
+};
 
 function xmlEscape(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -55,6 +89,27 @@ export class EdgeEngine implements TtsEngine {
   }
 
   private async connect(voice: string, locale: string): Promise<void> {
+    const tried = edgeRoute.current;
+    try {
+      await this.open(voice, locale);
+    } catch (err) {
+      // Refused or unreachable: try the other way in and keep it only when it
+      // connects, so one hiccup cannot strand every engine on a blocked host.
+      // A timeout would most likely hit that way too and only delay the
+      // switch to system voices. Offline, both fail fast and nothing changes.
+      if (err instanceof Error && /timed out/i.test(err.message)) throw err;
+      const other = tried === 'bing' ? 'msedgeservices' : 'bing';
+      edgeRoute.current = other;
+      try {
+        await this.open(voice, locale);
+      } catch (otherErr) {
+        if (edgeRoute.current === other) edgeRoute.current = tried;
+        throw otherErr;
+      }
+    }
+  }
+
+  private async open(voice: string, locale: string): Promise<void> {
     this.closeSocket();
     const tts = new MsEdgeTTS();
     await tts.setMetadata(voice, FORMAT, { voiceLocale: locale });
