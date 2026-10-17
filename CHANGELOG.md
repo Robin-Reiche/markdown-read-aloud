@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.17.1 (2026-10-17)
+
+- **Edge voices connect again.** Since about October 12, Microsoft refuses the connection
+  the extension used for its Edge voices, so every read fell back to system voices with
+  "Edge voices unreachable (... 403)". The extension now uses msedge-tts 2.1.0, which
+  connects through `api.msedgeservices.com`. Behind a firewall or proxy with an allow-list,
+  that host needs to be allowed. Thanks to @cosmasemerah for the fix (#7, closes #6).
+- **Multilingual voices, explained.** The setting text and the README now say that Edge's
+  multilingual voices pronounce a sentence in another language in that language, even with
+  per-paragraph switching off, and point to a voice for one language throughout.
+
 ## 1.17.0 — 2026-09-25
 
 - **A short note after an update.** When an update brings new features, one small
