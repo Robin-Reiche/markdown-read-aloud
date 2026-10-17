@@ -96,5 +96,9 @@
   "Buy Me a Coffee": "请我喝杯咖啡",
   "Don't Show Again": "不再显示",
   "Buy me a coffee on Ko-fi": "在 Ko-fi 上请我喝杯咖啡",
-  "Opens ko-fi.com/robinreiche in the browser": "在浏览器中打开 ko-fi.com/robinreiche"
+  "Opens ko-fi.com/robinreiche in the browser": "在浏览器中打开 ko-fi.com/robinreiche",
+  "Read Aloud: the system voice failed ({0}). Playback paused.": "朗读：系统语音出错（{0}）。已暂停播放。",
+  "Read Aloud: no system voice for {0} is installed. Add one in your system speech settings or use Edge voices.": "朗读：未安装{0}的系统语音。请在系统语音设置中添加，或使用 Edge 语音。",
+  "Read Aloud: no system voices are available on this computer. Use Edge voices to read aloud.": "朗读：此计算机上没有可用的系统语音。请使用 Edge 语音朗读。",
+  "Read Aloud: Edge voices are unreachable and no system voice for {0} is installed. Add one in your system speech settings.": "朗读：无法连接 Edge 语音，且未安装{0}的系统语音。请在系统语音设置中添加。"
 }

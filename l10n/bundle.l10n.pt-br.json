@@ -96,5 +96,9 @@
   "Buy Me a Coffee": "Me pague um café",
   "Don't Show Again": "Não mostrar novamente",
   "Buy me a coffee on Ko-fi": "Me pague um café no Ko-fi",
-  "Opens ko-fi.com/robinreiche in the browser": "Abre ko-fi.com/robinreiche no navegador"
+  "Opens ko-fi.com/robinreiche in the browser": "Abre ko-fi.com/robinreiche no navegador",
+  "Read Aloud: the system voice failed ({0}). Playback paused.": "Ler em voz alta: a voz do sistema falhou ({0}). Reprodução pausada.",
+  "Read Aloud: no system voice for {0} is installed. Add one in your system speech settings or use Edge voices.": "Ler em voz alta: nenhuma voz do sistema instalada para este idioma ({0}). Adicione uma nas configurações de fala do sistema ou use as vozes do Edge.",
+  "Read Aloud: no system voices are available on this computer. Use Edge voices to read aloud.": "Ler em voz alta: nenhuma voz do sistema disponível neste computador. Use as vozes do Edge para ler em voz alta.",
+  "Read Aloud: Edge voices are unreachable and no system voice for {0} is installed. Add one in your system speech settings.": "Ler em voz alta: vozes do Edge inacessíveis e nenhuma voz do sistema instalada para este idioma ({0}). Adicione uma nas configurações de fala do sistema."
 }

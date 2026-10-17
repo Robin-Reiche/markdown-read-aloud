@@ -109,6 +109,7 @@ export class PlayerPanel {
 
   private generation = 0; // bumped on voice/lang/gender change to discard stale synths
   private hadSuccess = false; // have we ever gotten audio from Edge this session?
+  private edgeFellBack = false; // system voices only because Edge was unreachable
 
   private cache = new AudioCache(MAX_CACHE_ENTRIES, MAX_CACHE_BYTES); // key: engine|voice|locale|cleanText
   private inflight = new Map<string, Promise<void>>();
@@ -192,6 +193,7 @@ export class PlayerPanel {
     this.currentVoice = pickVoice(this.docLocale, this.gender, this.overrides());
     this.generation++;
     this.hadSuccess = false;
+    this.edgeFellBack = false;
     this.inflight.clear();
 
     this.docUri = opts.docUri;
@@ -282,6 +284,9 @@ export class PlayerPanel {
       case 'exportAudio':
         await exportDocumentAudio(this.docUri);
         break;
+      case 'noSystemVoice':
+        void this.notifyNoSystemVoice(String(m.lang || ''), !!m.anyVoices, m.error ? String(m.error) : '');
+        break;
       // The Ko-fi entry at the bottom of the settings popover. The address is
       // fixed here, the webview only asks for it to be opened.
       case 'openSupport':
@@ -363,9 +368,40 @@ export class PlayerPanel {
     }
   }
 
+  /** The reader paused because no system voice speaks the document's language, or the
+      voice failed twice in a row. Reading on with another language's voice is what
+      issue #5 reported, so say why it stopped instead. */
+  private async notifyNoSystemVoice(lang: string, anyVoices: boolean, error: string) {
+    // The code comes from the webview and can trace back to a free-text setting, so only
+    // a plain language code reaches the message. 'und' reads as "Unknown language".
+    const code = /^[a-z]{2,3}$/.test(lang) ? lang : 'und';
+    let name = code;
+    try {
+      name = new Intl.DisplayNames([vscode.env.language], { type: 'language' }).of(code) || code;
+    } catch {
+      /* no display names for this UI language: show the code */
+    }
+    // After the Edge fallback, pointing back to Edge would only repeat its failure.
+    const useEdge = vscode.l10n.t('Use Edge Voices (online — sends text to Microsoft)');
+    const actions = this.edgeFellBack ? [] : [useEdge];
+    const choice = await vscode.window.showWarningMessage(
+      error
+        ? vscode.l10n.t('Read Aloud: the system voice failed ({0}). Playback paused.', error)
+        : this.edgeFellBack
+          ? vscode.l10n.t('Read Aloud: Edge voices are unreachable and no system voice for {0} is installed. Add one in your system speech settings.', name)
+          : anyVoices
+            ? vscode.l10n.t('Read Aloud: no system voice for {0} is installed. Add one in your system speech settings or use Edge voices.', name)
+            : vscode.l10n.t('Read Aloud: no system voices are available on this computer. Use Edge voices to read aloud.'),
+      ...actions
+    );
+    if (this.disposed) return;
+    if (choice === useEdge) this.switchEngineExplicit('edge');
+  }
+
   /** Explicit, user-chosen engine switch for this session (does not rewrite settings). */
   private switchEngineExplicit(id: EngineId) {
     this.setEngine(id);
+    this.edgeFellBack = false;
     this.generation++;
     this.post({ type: 'engineChanged', engine: id });
   }
@@ -494,6 +530,7 @@ export class PlayerPanel {
           void this.notifySupertonicFailure(String(err?.message || err));
         } else if (this.engineId === 'edge' && !this.hadSuccess) {
           this.setEngine('browser');
+          this.edgeFellBack = true;
           vscode.window.showWarningMessage(
             vscode.l10n.t(
               'Read Aloud: Edge voices unreachable ({0}). Falling back to system voices (offline).',

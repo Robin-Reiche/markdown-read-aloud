@@ -96,5 +96,9 @@
   "Buy Me a Coffee": "Offrimi un caffè",
   "Don't Show Again": "Non mostrare più",
   "Buy me a coffee on Ko-fi": "Offrimi un caffè su Ko-fi",
-  "Opens ko-fi.com/robinreiche in the browser": "Apre ko-fi.com/robinreiche nel browser"
+  "Opens ko-fi.com/robinreiche in the browser": "Apre ko-fi.com/robinreiche nel browser",
+  "Read Aloud: the system voice failed ({0}). Playback paused.": "Lettura ad alta voce: la voce di sistema ha generato un errore ({0}). Riproduzione in pausa.",
+  "Read Aloud: no system voice for {0} is installed. Add one in your system speech settings or use Edge voices.": "Lettura ad alta voce: nessuna voce di sistema installata per questa lingua ({0}). Aggiungine una nelle impostazioni vocali del sistema o usa le voci di Edge.",
+  "Read Aloud: no system voices are available on this computer. Use Edge voices to read aloud.": "Lettura ad alta voce: nessuna voce di sistema disponibile su questo computer. Usa le voci di Edge per la lettura ad alta voce.",
+  "Read Aloud: Edge voices are unreachable and no system voice for {0} is installed. Add one in your system speech settings.": "Lettura ad alta voce: voci di Edge non raggiungibili e nessuna voce di sistema installata per questa lingua ({0}). Aggiungine una nelle impostazioni vocali del sistema."
 }

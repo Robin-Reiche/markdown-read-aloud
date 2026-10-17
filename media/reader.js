@@ -62,7 +62,6 @@
   let SEGMENTS = [];        // [{id, el, text, lang}]
   let SECTIONS = [];        // [{idx, title}] for chapter ticks
   let wordsPrefix = [];     // cumulative word counts for remaining-time ETA
-  let synthVoice = null;    // browser engine
   const urlCache = new Map();
   const localeById = new Map(); // host-resolved locale per sentence (the language actually spoken)
   const requested = new Set();
@@ -509,24 +508,81 @@
     const loc = vu && vu.locale ? String(vu.locale).split('-')[0] : '';
     return loc || (SEGMENTS[i] ? SEGMENTS[i].lang : 'en');
   }
-  function initSynthVoices() {
-    const load = () => {
-      const vs = speechSynthesis.getVoices();
-      const base = synthBaseLang(state.idx);
-      synthVoice = vs.find((v) => v.lang.toLowerCase().startsWith(base)) || vs.find((v) => v.default) || vs[0] || null;
-    };
-    speechSynthesis.onvoiceschanged = load; load();
+  // Voice tags arrive as "en-US", "en_US" or "en", depending on the platform.
+  const normTag = (l) => String(l || '').replace(/_/g, '-').toLowerCase();
+  const tagBase = (l) => normTag(l).split('-')[0];
+  /** Exact locale first, then the same base language. No prefix match:
+      "fil-PH".startsWith("fi") would hand a Finnish document a Filipino voice. */
+  function voiceFor(vs, base, full) {
+    const f = normTag(full);
+    return (f && vs.find((v) => normTag(v.lang) === f)) || vs.find((v) => tagBase(v.lang) === base) || null;
   }
+  /** Voice for segment i: its own language first, then the document locale. A per-segment
+      guess (detectLang labels a German heading "en") without a voice must not stop a
+      document whose own language has one. Null only when the document locale has none. */
+  function synthVoiceFor(vs, i) {
+    const docLoc = vu && vu.locale ? String(vu.locale) : '';
+    const base = tagBase(synthBaseLang(i));
+    return voiceFor(vs, base, tagBase(docLoc) === base ? docLoc : '')
+      || (docLoc ? voiceFor(vs, tagBase(docLoc), docLoc) : null);
+  }
+  // Blink fills getVoices() asynchronously and can fire voiceschanged with an empty
+  // list before the voices arrive. An empty list right after start is not "no voices":
+  // wait for a non-empty list, but give up after VOICE_WAIT_MS.
+  const VOICE_WAIT_MS = 1500;
+  let voicesSettled = false, voiceWait = null;
+  function waitForVoices() {
+    if (voicesSettled || speechSynthesis.getVoices().length) { voicesSettled = true; return null; }
+    if (!voiceWait) voiceWait = new Promise((resolve) => {
+      const done = () => { clearTimeout(timer); speechSynthesis.removeEventListener('voiceschanged', check); voicesSettled = true; voiceWait = null; resolve(); };
+      const check = () => { if (speechSynthesis.getVoices().length) done(); };
+      const timer = setTimeout(done, VOICE_WAIT_MS);
+      speechSynthesis.addEventListener('voiceschanged', check);
+    });
+    return voiceWait;
+  }
+  /** Starts loading the voice list early, so the first sentence does not have to wait. */
+  function initSynthVoices() { waitForVoices(); }
+  let speakSeq = 0, synthFails = 0, firstFailIdx = -1;
   function speak(i) {
     if (i >= SEGMENTS.length) { finishAll(); return; }
     speechSynthesis.cancel();
+    const seq = ++speakSeq;
+    activate(i);
+    const wait = waitForVoices();
+    if (wait) {
+      wait.then(() => { if (seq === speakSeq && state.playing && state.idx === i && state.engine === 'browser') speak(i); });
+      return;
+    }
+    const vs = speechSynthesis.getVoices();
+    const v = synthVoiceFor(vs, i);
+    if (!v) {
+      // No voice for the document language. Never speak without u.voice and u.lang:
+      // Chromium then picks a voice by the app locale (VS Code's display language).
+      // Playback pauses here, so each warning answers one press of play.
+      const lang = vu && vu.locale ? tagBase(vu.locale) : tagBase(synthBaseLang(i));
+      setPlaying(false);
+      post({ type: 'noSystemVoice', lang, anyVoices: vs.length > 0 });
+      return;
+    }
     const u = new SpeechSynthesisUtterance(SEGMENTS[i].text);
     u.rate = Math.min(2.5, Math.max(0.5, state.rate)); u.volume = state.muted ? 0 : state.volume;
-    const vs = speechSynthesis.getVoices(); const base = synthBaseLang(i);
-    const v = vs.find((x) => x.lang.toLowerCase().startsWith(base)) || synthVoice;
-    if (v) { u.voice = v; u.lang = v.lang; }
-    u.onend = () => { if (state.playing && state.idx === i) advance(); };
-    activate(i); speechSynthesis.speak(u);
+    u.voice = v; u.lang = v.lang;
+    u.onend = () => { synthFails = 0; if (state.playing && state.idx === i) advance(); };
+    u.onerror = (e) => {
+      // speak(), stop and restartUtterance() cancel the previous utterance, which reports
+      // 'interrupted' or 'canceled'. That is not a failure.
+      // A cancel between two failures also means they were not in a row.
+      if (e.error === 'interrupted' || e.error === 'canceled') { synthFails = 0; return; }
+      if (!(state.playing && state.idx === i)) return;
+      // Skip one failed sentence like the audio 'error' handler does, stop on the second in a row.
+      if (++synthFails < 2) { firstFailIdx = i; advance(); return; }
+      // Two in a row point to the voice, not the sentence: pause on the first failed one,
+      // so play retries it instead of losing it (often the title, with autoplay).
+      synthFails = 0; state.idx = firstFailIdx; activate(firstFailIdx); setPlaying(false);
+      post({ type: 'noSystemVoice', lang: tagBase(v.lang), anyVoices: true, error: String(e.error || 'unknown') });
+    };
+    speechSynthesis.speak(u);
   }
   function restartUtterance() {
     if (state.engine === 'browser' && state.playing && speechSynthesis.speaking) { speechSynthesis.cancel(); speak(state.idx); }
@@ -989,6 +1045,7 @@
     // fully stop whatever the previous document was doing
     stopAudioEl();
     try { speechSynthesis.cancel(); } catch (_) {}
+    synthFails = 0;
     setPlaying(false);
     disarmSleep(); hideResumePill();
     clearAudioCache();

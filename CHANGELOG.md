@@ -7,6 +7,13 @@
   `*.instructions.md`, `*.agent.md`, `.claude/agents/*.md` and `SKILL.md`. The speaker
   button, the context menu entries and the shortcut now appear on those files too, since
   they are plain Markdown. Thanks to @cosmasemerah (#8).
+- **System voices no longer read in the wrong language.** When no installed system voice
+  speaks the document's language, playback pauses and a message names the missing
+  language, with a button for Edge voices unless Edge is the engine that just failed.
+  Before, the system's default voice read on, so a German voice could read an English
+  document (#5). Without any system voice, for example
+  in VS Code on Linux, playback no longer hangs silently. A voice that fails twice in a row
+  pauses with the reason.
 
 ## 1.17.1 (2026-10-17)
 

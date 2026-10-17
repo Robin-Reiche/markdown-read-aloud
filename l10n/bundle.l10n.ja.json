@@ -96,5 +96,9 @@
   "Buy Me a Coffee": "コーヒーをおごる",
   "Don't Show Again": "今後表示しない",
   "Buy me a coffee on Ko-fi": "Ko-fi でコーヒーをおごる",
-  "Opens ko-fi.com/robinreiche in the browser": "ブラウザーで ko-fi.com/robinreiche を開きます"
+  "Opens ko-fi.com/robinreiche in the browser": "ブラウザーで ko-fi.com/robinreiche を開きます",
+  "Read Aloud: the system voice failed ({0}). Playback paused.": "音声読み上げ: システム音声でエラーが発生しました（{0}）。再生を一時停止しました。",
+  "Read Aloud: no system voice for {0} is installed. Add one in your system speech settings or use Edge voices.": "音声読み上げ: {0}のシステム音声がインストールされていません。システムの音声設定で追加するか、Edge 音声を使用してください。",
+  "Read Aloud: no system voices are available on this computer. Use Edge voices to read aloud.": "音声読み上げ: このコンピューターで使用できるシステム音声がありません。読み上げには Edge 音声を使用してください。",
+  "Read Aloud: Edge voices are unreachable and no system voice for {0} is installed. Add one in your system speech settings.": "音声読み上げ: Edge 音声に接続できず、{0}のシステム音声もインストールされていません。システムの音声設定で追加してください。"
 }
