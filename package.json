@@ -64,7 +64,11 @@
     "theme": "dark"
   },
   "activationEvents": [
-    "onLanguage:markdown"
+    "onLanguage:markdown",
+    "onLanguage:prompt",
+    "onLanguage:instructions",
+    "onLanguage:chatagent",
+    "onLanguage:skill"
   ],
   "contributes": {
     "commands": [
@@ -107,55 +111,55 @@
       "editor/title": [
         {
           "command": "markdownReadAloud.readDocument",
-          "when": "resourceLangId == markdown",
+          "when": "resourceLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/",
           "group": "navigation@1"
         },
         {
           "command": "markdownReadAloud.exportAudio",
-          "when": "resourceLangId == markdown",
+          "when": "resourceLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/",
           "group": "navigation@2"
         }
       ],
       "explorer/context": [
         {
           "command": "markdownReadAloud.exportAudio",
-          "when": "resourceLangId == markdown",
+          "when": "resourceLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/",
           "group": "navigation@9"
         }
       ],
       "editor/context": [
         {
           "command": "markdownReadAloud.readFromCursor",
-          "when": "editorLangId == markdown && !editorHasSelection",
+          "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/ && !editorHasSelection",
           "group": "navigation@9"
         },
         {
           "command": "markdownReadAloud.readSelection",
-          "when": "editorLangId == markdown && editorHasSelection",
+          "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/ && editorHasSelection",
           "group": "navigation@9"
         },
         {
           "command": "markdownReadAloud.exportAudio",
-          "when": "editorLangId == markdown",
+          "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/",
           "group": "navigation@10"
         }
       ],
       "commandPalette": [
         {
           "command": "markdownReadAloud.readDocument",
-          "when": "resourceLangId == markdown"
+          "when": "resourceLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/"
         },
         {
           "command": "markdownReadAloud.readFromCursor",
-          "when": "editorLangId == markdown"
+          "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/"
         },
         {
           "command": "markdownReadAloud.readSelection",
-          "when": "editorLangId == markdown"
+          "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/"
         },
         {
           "command": "markdownReadAloud.exportAudio",
-          "when": "resourceLangId == markdown"
+          "when": "resourceLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/"
         }
       ]
     },
@@ -164,7 +168,7 @@
         "command": "markdownReadAloud.readFromCursor",
         "key": "ctrl+alt+r",
         "mac": "cmd+alt+r",
-        "when": "editorLangId == markdown && editorTextFocus"
+        "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/ && editorTextFocus"
       },
       {
         "command": "markdownReadAloud.togglePlayPause",
