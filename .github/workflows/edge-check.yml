@@ -1,0 +1,50 @@
+name: Edge voices check
+
+# Once a day: do both ways into Microsoft's read-aloud service still return
+# audio? A red run sends the usual GitHub mail about a failed workflow, so a
+# closed way shows up while the other one still carries the users.
+# GitHub switches scheduled workflows off after 60 days without activity in a
+# public repo. The keepalive job re-enables this one on every scheduled run,
+# like liskin/gh-workflow-keepalive. If the Actions tab still shows it as
+# disabled after a quiet stretch, enable it there by hand.
+on:
+  schedule:
+    - cron: "23 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ask both ways for audio
+        run: |
+          npx esbuild scripts/edge-probe.ts --bundle --platform=node --log-level=warning --outfile=.test-dist/edge-probe.js
+          node .test-dist/edge-probe.js
+
+  keepalive:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+
+    steps:
+      - name: Re-enable this workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/edge-check.yml/enable"
