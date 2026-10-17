@@ -68,6 +68,7 @@
     "onLanguage:prompt",
     "onLanguage:instructions",
     "onLanguage:chatagent",
+    "onLanguage:chatmode",
     "onLanguage:skill"
   ],
   "contributes": {
@@ -111,55 +112,55 @@
       "editor/title": [
         {
           "command": "markdownReadAloud.readDocument",
-          "when": "resourceLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/",
+          "when": "resourceLangId =~ /^(markdown|prompt|instructions|chatagent|chatmode|skill)$/",
           "group": "navigation@1"
         },
         {
           "command": "markdownReadAloud.exportAudio",
-          "when": "resourceLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/",
+          "when": "resourceLangId =~ /^(markdown|prompt|instructions|chatagent|chatmode|skill)$/",
           "group": "navigation@2"
         }
       ],
       "explorer/context": [
         {
           "command": "markdownReadAloud.exportAudio",
-          "when": "resourceLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/",
+          "when": "resourceLangId =~ /^(markdown|prompt|instructions|chatagent|chatmode|skill)$/",
           "group": "navigation@9"
         }
       ],
       "editor/context": [
         {
           "command": "markdownReadAloud.readFromCursor",
-          "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/ && !editorHasSelection",
+          "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|chatmode|skill)$/ && !editorHasSelection",
           "group": "navigation@9"
         },
         {
           "command": "markdownReadAloud.readSelection",
-          "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/ && editorHasSelection",
+          "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|chatmode|skill)$/ && editorHasSelection",
           "group": "navigation@9"
         },
         {
           "command": "markdownReadAloud.exportAudio",
-          "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/",
+          "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|chatmode|skill)$/",
           "group": "navigation@10"
         }
       ],
       "commandPalette": [
         {
           "command": "markdownReadAloud.readDocument",
-          "when": "resourceLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/"
+          "when": "resourceLangId =~ /^(markdown|prompt|instructions|chatagent|chatmode|skill)$/"
         },
         {
           "command": "markdownReadAloud.readFromCursor",
-          "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/"
+          "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|chatmode|skill)$/"
         },
         {
           "command": "markdownReadAloud.readSelection",
-          "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/"
+          "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|chatmode|skill)$/"
         },
         {
           "command": "markdownReadAloud.exportAudio",
-          "when": "resourceLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/"
+          "when": "resourceLangId =~ /^(markdown|prompt|instructions|chatagent|chatmode|skill)$/"
         }
       ]
     },
@@ -168,7 +169,7 @@
         "command": "markdownReadAloud.readFromCursor",
         "key": "ctrl+alt+r",
         "mac": "cmd+alt+r",
-        "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|skill)$/ && editorTextFocus"
+        "when": "editorLangId =~ /^(markdown|prompt|instructions|chatagent|chatmode|skill)$/ && editorTextFocus"
       },
       {
         "command": "markdownReadAloud.togglePlayPause",

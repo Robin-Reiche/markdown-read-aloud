@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **Read Aloud on chat customization files.** VS Code gives prompt, instruction, agent,
+  chat mode and skill files their own language, for example `*.prompt.md`,
+  `*.instructions.md`, `*.agent.md`, `.claude/agents/*.md` and `SKILL.md`. The speaker
+  button, the context menu entries and the shortcut now appear on those files too, since
+  they are plain Markdown. Thanks to @cosmasemerah (#8).
+
 ## 1.17.1 (2026-10-17)
 
 - **Edge voices connect again.** Since about October 12, Microsoft refuses the connection
