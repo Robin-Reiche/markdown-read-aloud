@@ -680,6 +680,7 @@ export class PlayerPanel {
       off: vscode.l10n.t('Off'),
       untilSectionEnd: vscode.l10n.t('Until end of section'),
       codeBlock: vscode.l10n.t('Code block'),
+      diagram: vscode.l10n.t('Diagram'),
       heading: vscode.l10n.t('Heading'),
       sentenceOf: vscode.l10n.t('Sentence {0} of {1}'),
       progress: vscode.l10n.t('Progress'),
