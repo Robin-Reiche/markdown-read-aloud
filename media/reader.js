@@ -12,7 +12,7 @@
     collapseAll:'Collapse all sections', expandAll:'Expand all sections', toggleSection:'Toggle section',
     backToReading:'Back to reading', startOver:'Start over', resumed:'Resumed where you left off',
     sleepTimer:'Sleep timer', off:'Off', untilSectionEnd:'Until end of section',
-    codeBlock:'Code block', heading:'Heading', sentenceOf:'Sentence {0} of {1}',
+    codeBlock:'Code block', diagram:'Diagram', heading:'Heading', sentenceOf:'Sentence {0} of {1}',
     progress:'Progress', nothingToRead:'Nothing readable in this document.',
     openInEditor:'Alt+Click a sentence to open it in the editor',
     fontSerifSub:'warm serif', fontSansSub:'clean sans', fontA11ySub:'max legibility', fontMonoSub:'calm, technical',
@@ -300,9 +300,11 @@
   function handlePre(pre) {
     const mode = state.settings.codeBlocks;
     if (mode === 'skip') return;
-    if (mode === 'announce') {
+    // a ```mermaid block is a diagram; its source is never worth reading out
+    const diagram = !!pre.querySelector('code.language-mermaid');
+    if (mode === 'announce' || diagram) {
       const prev = SEGMENTS.length ? SEGMENTS[SEGMENTS.length - 1].lang : 'en';
-      SEGMENTS.push({ id: SEG_SEQ++, el: pre, text: L.codeBlock, lang: prev });
+      SEGMENTS.push({ id: SEG_SEQ++, el: pre, text: diagram ? L.diagram : L.codeBlock, lang: prev });
       return;
     }
     // 'read': chunk the code into line groups so synthesis stays manageable

@@ -24,6 +24,11 @@ const CODE_PHRASE: Record<string, string> = {
   it: 'Blocco di codice.', pt: 'Bloco de código.', nl: 'Codeblok.', ru: 'Блок кода.',
   ja: 'コードブロック。', zh: '代码块。', ko: '코드 블록.', pl: 'Blok kodu.',
 };
+const DIAGRAM_PHRASE: Record<string, string> = {
+  en: 'Diagram.', de: 'Diagramm.', fr: 'Diagramme.', es: 'Diagrama.',
+  it: 'Diagramma.', pt: 'Diagrama.', nl: 'Diagram.', ru: 'Диаграмма.',
+  ja: '図。', zh: '图表。', ko: '다이어그램.', pl: 'Diagram.',
+};
 const HEADING_PHRASE: Record<string, string> = {
   en: 'Heading.', de: 'Überschrift.', fr: 'Titre.', es: 'Título.', it: 'Titolo.',
   pt: 'Título.', nl: 'Kop.', ru: 'Заголовок.', ja: '見出し。', zh: '标题。', ko: '제목.',
@@ -40,6 +45,7 @@ export function processMarkdown(source: string, opts: ProcessOptions): ProcessRe
   let frontmatterLang: string | undefined;
 
   const codePhrase = CODE_PHRASE[opts.lang] || CODE_PHRASE.en;
+  const diagramPhrase = DIAGRAM_PHRASE[opts.lang] || DIAGRAM_PHRASE.en;
   const headingPhrase = HEADING_PHRASE[opts.lang] || HEADING_PHRASE.en;
 
   const pushBlock = (kind: BlockKind, text: string, node: any, headingLevel?: number) => {
@@ -91,7 +97,10 @@ export function processMarkdown(source: string, opts: ProcessOptions): ProcessRe
         }
         case 'code':
         case 'math': {
-          if (opts.codeBlocks === 'read' && node.type === 'code') {
+          if (node.type === 'code' && node.lang === 'mermaid') {
+            // a diagram's source is never worth reading out, even in 'read' mode
+            if (opts.codeBlocks !== 'skip') pushBlock('code', diagramPhrase, node);
+          } else if (opts.codeBlocks === 'read' && node.type === 'code') {
             pushBlock('code', String(node.value || ''), node);
           } else if (opts.codeBlocks !== 'skip') {
             pushBlock('code', codePhrase, node);
