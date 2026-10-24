@@ -344,7 +344,7 @@
     "@types/vscode": "^1.90.0",
     "@vscode/l10n-dev": "^0.0.35",
     "@vscode/vsce": "^3.9.2",
-    "esbuild": "^0.24.0",
+    "esbuild": "^0.25.12",
     "flag-icons": "^7.5.0",
     "pngjs": "^7.0.0",
     "svgo": "^4.0.1",
