@@ -349,5 +349,8 @@
     "pngjs": "^7.0.0",
     "svgo": "^4.0.1",
     "typescript": "^5.5.0"
+  },
+  "overrides": {
+    "@azure/msal-node": "^7.1.0"
   }
 }
