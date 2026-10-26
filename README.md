@@ -208,7 +208,8 @@ supertonic info      # model files live in ~/.cache/supertonic3
   another machine avoids the download entirely (useful for air-gapped setups).
 - **Pinning:** install with a pinned version (`pip install supertonic==1.3.1`)
   or from a lock file so upgrades are deliberate. This repo's tested server
-  versions are recorded in `supertonic-server-requirements.lock.txt`.
+  versions are recorded in `supertonic-server-requirements.lock.txt`, which
+  needs Python 3.11 or newer.
 - **Stopping** the server (Ctrl+C, or stopping its service) is always safe —
   the extension fails closed and tells you how to restart it.
 - **Run it as a service** so it survives reboots. On Linux/WSL2 with systemd,
