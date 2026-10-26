@@ -1,7 +1,9 @@
-// Daily check from .github/workflows/edge-check.yml: do both ways into
-// Microsoft's read-aloud service still return audio? It fails as soon as one
-// way stops working, so the alarm comes while the other way still carries the
-// users (see edgeRoute in src/engines/edgeEngine.ts). Run it locally with
+// Daily check from .github/workflows/edge-check.yml: does Microsoft's
+// read-aloud service still return audio? It fails when the main way (the old
+// host with the v2 token that Edge itself uses) stops working. The reserve
+// (api.msedgeservices.com, closed since 23 October 2026) only adds a warning to
+// the run, so its outage cannot hide a new one on the main way (see edgeRoute
+// in src/engines/edgeEngine.ts). Run it locally with
 //   npx esbuild scripts/edge-probe.ts --bundle --platform=node --outfile=.test-dist/edge-probe.js && node .test-dist/edge-probe.js
 import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import { edgeRoute } from '../src/engines/edgeEngine';
@@ -37,7 +39,7 @@ async function audioVia(route: typeof edgeRoute.current): Promise<number> {
     process.exit(1);
   }, WATCHDOG_MS).unref();
   let failed = false;
-  for (const route of ['msedgeservices', 'bing'] as const) {
+  for (const route of ['bing', 'msedgeservices'] as const) {
     for (let attempt = 1; ; attempt++) {
       try {
         const bytes = await audioVia(route);
@@ -47,7 +49,9 @@ async function audioVia(route: typeof edgeRoute.current): Promise<number> {
       } catch (e) {
         console.log(`${route}: attempt ${attempt} failed: ${e instanceof Error ? e.message : String(e)}`);
         if (attempt === ATTEMPTS) {
-          failed = true;
+          // GitHub shows ::warning:: as a note on the run without turning it red.
+          if (route === 'bing') failed = true;
+          else console.log('::warning::The reserve way gives no audio, the users depend on bing alone');
           break;
         }
         await new Promise((r) => setTimeout(r, PAUSE_MS));

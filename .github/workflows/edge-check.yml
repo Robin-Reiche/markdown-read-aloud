@@ -1,8 +1,8 @@
 name: Edge voices check
 
-# Once a day: do both ways into Microsoft's read-aloud service still return
-# audio? A red run sends the usual GitHub mail about a failed workflow, so a
-# closed way shows up while the other one still carries the users.
+# Once a day: does the main way into Microsoft's read-aloud service still
+# return audio? A red run sends the usual GitHub mail about a failed workflow.
+# The reserve way only adds a warning to the run (see scripts/edge-probe.ts).
 # GitHub switches scheduled workflows off after 60 days without activity in a
 # public repo. The keepalive job re-enables this one on every scheduled run,
 # like liskin/gh-workflow-keepalive. If the Actions tab still shows it as

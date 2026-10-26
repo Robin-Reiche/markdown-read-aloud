@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Edge voices start on the way that works.** Since October 23, Microsoft no longer
+  opens the connection through `api.msedgeservices.com`. The extension switched to the
+  other way on its own, but every session first tried the closed one. It now starts on
+  `speech.platform.bing.com`, the way Edge itself uses. The other way stays in reserve.
+
 ## 1.18.0 (2026-10-17)
 
 - **Read Aloud on chat customization files.** VS Code gives prompt, instruction, agent,

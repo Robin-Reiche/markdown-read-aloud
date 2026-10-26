@@ -7,16 +7,18 @@ const FORMAT = OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3;
 const SYNTH_TIMEOUT = 30000;
 
 /**
- * Microsoft has two ways into the read-aloud service and has closed one of them
- * before: in October 2026 speech.platform.bing.com started to refuse the v1
- * token. msedge-tts only knows one way, so its URL builder is swapped for one
- * that can also take the other, the old host with the v2 token of
- * rany2/edge-tts. The route is shared by all engines, so after one switch the
+ * Microsoft has two ways into the read-aloud service and keeps closing them:
+ * in October 2026 speech.platform.bing.com started to refuse the v1 token.
+ * Since 23 October api.msedgeservices.com no longer opens the socket either.
+ * Edge itself synthesizes on the old host with the v2 token of rany2/edge-tts,
+ * so the route starts there. msedge-tts 2.1.0 only knows the new host, so its
+ * URL builder is swapped for one that can take either way. The new host stays
+ * as the reserve. The route is shared by all engines, so after one switch the
  * player and the export both stay on the way that works. Exported for
  * tests/edgeEngine.test.ts and the daily check in scripts/edge-probe.ts.
  */
 export const edgeRoute = {
-  current: 'msedgeservices' as 'msedgeservices' | 'bing',
+  current: 'bing' as 'msedgeservices' | 'bing',
   bingUrl: 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1',
 };
 const BING_TOKEN_VERSION = '2-143.0.3650.75';
