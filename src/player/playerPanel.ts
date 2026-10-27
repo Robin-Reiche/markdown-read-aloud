@@ -297,6 +297,14 @@ export class PlayerPanel {
           void this.context.globalState.update(PREFS_KEY, m.prefs);
         }
         break;
+      // The reader's "Read tables aloud" switch. Same setting as markdownReadAloud.tables,
+      // so the export and the next document follow it.
+      case 'setTables': {
+        if (m.value !== 'read' && m.value !== 'skip') break;
+        if (this.lastLoad) this.lastLoad.settings.tables = m.value; // an iframe reload resends it
+        await vscode.workspace.getConfiguration('markdownReadAloud').update('tables', m.value, vscode.ConfigurationTarget.Global);
+        break;
+      }
       case 'persistSpeed': {
         const n = Number(m.value);
         if (!Number.isFinite(n)) break;
@@ -663,6 +671,7 @@ export class PlayerPanel {
       themePaper: vscode.l10n.t('Paper'),
       ambient: vscode.l10n.t('Ambient focus'),
       badges: vscode.l10n.t('Show language badges'),
+      readTables: vscode.l10n.t('Read tables aloud'),
       readSection: vscode.l10n.t('Read section'),
       settings: vscode.l10n.t('More settings'),
       reading: vscode.l10n.t('Reading'),

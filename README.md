@@ -249,7 +249,7 @@ supertonic info      # model files live in ~/.cache/supertonic3
 | `markdownReadAloud.voiceOverrides` | `{}` | Per-language voice override, e.g. `{ "de-DE": "de-DE-KatjaNeural" }`. |
 | `markdownReadAloud.announceHeadings` | `false` | Say "Heading" before headings. |
 | `markdownReadAloud.codeBlocks` | `announce` | `skip` / `announce` / `read` code blocks. |
-| `markdownReadAloud.tables` | `skip` | `skip` / `read` tables. |
+| `markdownReadAloud.tables` | `skip` | `skip` / `read` tables. Also the **Read tables aloud** switch in the reader's settings. |
 | `markdownReadAloud.highlightWhileReading` | `true` | Highlight the current sentence in the reader. |
 | `markdownReadAloud.openLocation` | `beside` | Where the reader opens. `beside` splits the editor into a second column, `active` opens it as a tab in the current editor group. Applies the next time the reader opens. |
 | `markdownReadAloud.volume` | `1.0` | Default playback volume (0–1). |

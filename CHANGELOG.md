@@ -6,6 +6,9 @@
   with silence up to almost two seconds, so a heading such as "Usage" was followed by
   over a second of quiet where a sentence ends after 0.35 s. The extension now cuts that
   padding after the last spoken word, in the reader and in the MP3 export (#5).
+- **Tables from the reader's settings.** The settings menu in the reader has a new switch,
+  **Read tables aloud**, off by default. It changes `markdownReadAloud.tables` and reads
+  the open document again at once, so the export follows it too (#5).
 
 ## 1.18.1 (2026-10-26)
 

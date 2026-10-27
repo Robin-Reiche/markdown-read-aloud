@@ -6,7 +6,7 @@
     language:'Language', autoLangLabel:'Auto language (per paragraph)', multilingual:'multilingual',
     readingFont:'Reading font', comfort:'Comfort', compact:'Compact', cozy:'Cozy', wide:'Wide', flat:'Full',
     theme:'Theme', themeAuto:'Follow VS Code', themeStudy:'Study', themeDaylight:'Daylight', themePaper:'Paper',
-    ambient:'Ambient focus', badges:'Show language badges', readSection:'Read section', settings:'More settings',
+    ambient:'Ambient focus', badges:'Show language badges', readTables:'Read tables aloud', readSection:'Read section', settings:'More settings',
     reading:'Reading', playback:'Playback', minShort:'~{0} min', edit:'Edit source',
     download:'Download as audio file',
     collapseAll:'Collapse all sections', expandAll:'Expand all sections', toggleSection:'Toggle section',
@@ -145,6 +145,7 @@
         <div class="grp"><span class="lbl">${esc(L.reading)}</span>
           <label class="toggle"><input type="checkbox" id="ambient-t"> ${esc(L.ambient)}</label>
           <label class="toggle"><input type="checkbox" id="badges"> ${esc(L.badges)}</label>
+          <label class="toggle"><input type="checkbox" id="tables-t"> ${esc(L.readTables)}</label>
           <div class="mini-row"><button class="btn" id="collapse-all" title="${esc(L.collapseAll)}" aria-label="${esc(L.collapseAll)}">−</button><button class="btn" id="expand-all" title="${esc(L.expandAll)}" aria-label="${esc(L.expandAll)}">+</button></div>
           <span class="hint">${esc(L.openInEditor)}</span>
         </div>
@@ -438,6 +439,7 @@
     const p = audio.play(); if (p && p.catch) p.catch(() => setPlaying(false));
   }
   let loadGen = 0; // bumped per 'load' so late audio from the previous document is dropped
+  let docHtml = ''; // rendered document before segmentation, to segment it again
   function requestSynth(i) {
     if (i < 0 || i >= SEGMENTS.length) return;
     if (urlCache.has(i) || requested.has(i)) return;
@@ -947,6 +949,13 @@
     $('voice').onchange = (e) => post({ type:'setVoice', shortName: e.target.value });
     $('badges').onchange = (e) => { state.badges = e.target.checked; applyBadgesPref(); persistPrefs(); };
     $('ambient-t').onchange = (e) => { state.ambient = e.target.checked; applyAmbient(); persistPrefs(); };
+    // Tables decide which blocks become sentences, so the document is segmented again,
+    // keeping the place like a live edit does. The host stores the choice in the setting.
+    $('tables-t').onchange = (e) => {
+      state.settings.tables = e.target.checked ? 'read' : 'skip';
+      post({ type:'setTables', value: state.settings.tables });
+      if (docHtml) onUpdate({ html: docHtml });
+    };
     $('collapse-all').onclick = () => document.querySelectorAll('#doc h2, #doc h3').forEach((h) => toggleCollapse(h, true));
     $('expand-all').onclick = () => document.querySelectorAll('#doc h1,#doc h2,#doc h3').forEach((h) => toggleCollapse(h, false));
     $('follow-btn').onclick = () => attachFollow();
@@ -1057,6 +1066,7 @@
     state.lastVol = state.volume || 1; state.muted = false;
     state.settings = Object.assign({ codeBlocks:'announce', tables:'skip', announceHeadings:false, highlight:true }, m.settings || {});
     document.body.classList.toggle('no-highlight', !state.settings.highlight);
+    $('tables-t').checked = state.settings.tables === 'read';
     applyPrefs(m.prefs);
     vu = { autoLang:m.autoLang, locale:m.locale, localeName:m.localeName, locales:m.locales, voicePair:m.voicePair, allVoices:m.allVoices, currentVoice:m.currentVoice, gender:m.gender };
     state.autoLang = !!m.autoLang;
@@ -1067,7 +1077,8 @@
     state.docKey = m.docKey || '';
     const base = $('doc-base') || (() => { const b = document.createElement('base'); b.id = 'doc-base'; document.head.appendChild(b); return b; })();
     base.href = m.baseHref || '';
-    $('doc').innerHTML = m.html || '';
+    docHtml = m.html || '';
+    $('doc').innerHTML = docHtml;
     buildSegments($('doc'));
     decorateHeadings();
     document.querySelectorAll('[data-act="prev"], [data-act="toggle"], [data-act="next"]').forEach((b) => b.disabled = !SEGMENTS.length);
@@ -1115,6 +1126,7 @@
     loadGen++;
     clearAudioCache();
     lastSentIdx = -1;
+    docHtml = m.html;
     $('doc').innerHTML = m.html;
     buildSegments($('doc'));
     decorateHeadings();
