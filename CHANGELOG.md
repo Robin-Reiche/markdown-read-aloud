@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **No more long pause after short headings.** Microsoft's Edge voices pad short clips
+  with silence up to almost two seconds, so a heading such as "Usage" was followed by
+  over a second of quiet where a sentence ends after 0.35 s. The extension now cuts that
+  padding after the last spoken word, in the reader and in the MP3 export (#5).
+
 ## 1.18.1 (2026-10-26)
 
 - **Edge voices start on the way that works.** Since October 23, Microsoft no longer

@@ -6,6 +6,14 @@ import { secMsGecV2 } from './edgeToken';
 const FORMAT = OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3;
 const SYNTH_TIMEOUT = 30000;
 
+/** In FORMAT (MPEG-2 Layer III, 24 kHz, 48 kbit/s) every frame is 144 bytes and 24 ms long. */
+const FRAME_BYTES = 144;
+const FRAME_SEC = 0.024;
+/** A normal Edge sentence ends with about 0.35 s of silence. Padded clips keep the same. */
+const TAIL_SEC = 0.35;
+/** Less extra silence than this is left alone, so ordinary sentences stay byte for byte. */
+const MIN_TRIM_SEC = 0.3;
+
 /**
  * Microsoft has two ways into the read-aloud service and keeps closing them:
  * in October 2026 speech.platform.bing.com started to refuse the v1 token.
@@ -42,6 +50,46 @@ lib.getSynthUrl = async () => {
 
 function xmlEscape(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * End of the last spoken word in seconds, from Edge's word boundary messages
+ * (offsets and durations in 100 ns ticks). 0 when there is none or one does not
+ * parse, which leaves the audio untouched.
+ */
+export function speechEndSec(messages: string[]): number {
+  let end = 0;
+  for (const m of messages) {
+    try {
+      for (const e of JSON.parse(m).Metadata ?? []) {
+        const d = e?.Data;
+        if (typeof d?.Offset === 'number' && typeof d?.Duration === 'number') {
+          end = Math.max(end, (d.Offset + d.Duration) / 1e7);
+        }
+      }
+    } catch {
+      return 0;
+    }
+  }
+  return end;
+}
+
+/**
+ * Edge pads many short clips with silence up to 1.872 s, so a one-word heading
+ * such as "Usage" ends with over a second of silence where a sentence has 0.35 s
+ * (#5). Cut whole frames after the last word plus that usual tail. Anything that
+ * does not look like the expected frame layout is returned unchanged.
+ */
+export function trimPadding(mp3: Buffer, speechEnd: number): Buffer {
+  if (!(speechEnd > 0) || mp3.length % FRAME_BYTES !== 0) return mp3;
+  const frames = mp3.length / FRAME_BYTES;
+  const keep = Math.ceil((speechEnd + TAIL_SEC) / FRAME_SEC);
+  if ((frames - keep) * FRAME_SEC < MIN_TRIM_SEC) return mp3;
+  for (let i = 0; i <= keep; i++) {
+    const o = i * FRAME_BYTES;
+    if (mp3[o] !== 0xff || (mp3[o + 1] & 0xe0) !== 0xe0) return mp3;
+  }
+  return mp3.subarray(0, keep * FRAME_BYTES);
 }
 
 /** Derive a BCP-47 locale from a voice short name, e.g. "de-DE-Seraphina…" -> "de-DE". */
@@ -114,7 +162,8 @@ export class EdgeEngine implements TtsEngine {
   private async open(voice: string, locale: string): Promise<void> {
     this.closeSocket();
     const tts = new MsEdgeTTS();
-    await tts.setMetadata(voice, FORMAT, { voiceLocale: locale });
+    // Word boundaries tell where speech ends, so trimPadding can cut the padding.
+    await tts.setMetadata(voice, FORMAT, { voiceLocale: locale, wordBoundaryEnabled: true });
     this.tts = tts;
     this.voice = voice;
     this.locale = locale;
@@ -148,13 +197,17 @@ export class EdgeEngine implements TtsEngine {
 
   private streamToBuffer(escaped: string): Promise<Buffer> {
     return new Promise<Buffer>((resolve, reject) => {
-      const { audioStream } = this.tts!.toStream(escaped, { rate: '+0%', pitch: '+0Hz', volume: 100 });
+      const { audioStream, metadataStream } = this.tts!.toStream(escaped, { rate: '+0%', pitch: '+0Hz', volume: 100 });
       const chunks: Buffer[] = [];
+      // Attached right away, so every message arrives as its own chunk. Edge sends
+      // them before the turn ends, so all are in when the audio ends.
+      const metadata: string[] = [];
+      metadataStream?.on('data', (c: Buffer) => metadata.push(c.toString('utf8')));
       const timer = setTimeout(() => reject(new Error('Edge TTS timeout')), SYNTH_TIMEOUT);
       audioStream.on('data', (c: Buffer) => chunks.push(c));
       audioStream.on('end', () => {
         clearTimeout(timer);
-        resolve(Buffer.concat(chunks));
+        resolve(trimPadding(Buffer.concat(chunks), speechEndSec(metadata)));
       });
       audioStream.on('error', (e: Error) => {
         clearTimeout(timer);
