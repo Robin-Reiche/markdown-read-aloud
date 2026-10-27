@@ -8,13 +8,14 @@ import {
   SUPERTONIC_MAX_INPUT_LENGTH,
   supertonicVoiceForGender,
 } from '../engines/supertonicHttpEngine';
+import { OllamaEngine, OLLAMA_MAX_INPUT_LENGTH, ollamaModel } from '../engines/ollamaEngine';
 import { buildJob } from '../reader';
 import { applyPronunciations, normalizeForSpeech } from '../markdown/normalize';
 import { pickVoice } from '../voices';
 import { joinWav, withId3 } from './audioContainer';
 import type { Chunk, Gender, TtsEngine } from '../types';
 
-type ExportEngineId = 'edge' | 'supertonic';
+type ExportEngineId = 'edge' | 'supertonic' | 'ollama';
 
 const MAX_CONCURRENCY = 8;
 
@@ -123,7 +124,7 @@ async function resolveDocument(uriArg?: vscode.Uri): Promise<vscode.TextDocument
  * online with the document text.
  */
 async function resolveExportEngine(configured: string): Promise<ExportEngineId | undefined> {
-  if (configured === 'supertonic') return await resolveSupertonic();
+  if (configured === 'supertonic' || configured === 'ollama') return await resolveLocal(configured);
   if (configured !== 'browser') return 'edge';
 
   const useEdge = vscode.l10n.t('Use Edge Voices (online — sends text to Microsoft)');
@@ -138,35 +139,46 @@ async function resolveExportEngine(configured: string): Promise<ExportEngineId |
 }
 
 /**
- * Supertonic synthesizes only while the user's own server is running. Check once up
- * front rather than firing a whole document at a dead port, and offer the same way
- * out the reader does on the same failure.
+ * Supertonic and Ollama synthesize only while the user's own server is running. Check
+ * once up front rather than firing a whole document at a dead port, and offer the same
+ * way out the reader does on the same failure.
  */
-async function resolveSupertonic(): Promise<ExportEngineId | undefined> {
+async function resolveLocal(id: 'supertonic' | 'ollama'): Promise<ExportEngineId | undefined> {
   const retry = vscode.l10n.t('Retry');
   const useEdge = vscode.l10n.t('Use Edge Voices (online — sends text to Microsoft)');
   for (;;) {
-    const engine = new SupertonicHttpEngine();
+    const model = configuredOllamaModel();
+    const engine = id === 'ollama' ? new OllamaEngine() : new SupertonicHttpEngine();
     let detail: string;
     try {
-      await engine.health();
-      return 'supertonic';
+      await engine.warm(id === 'ollama' ? model : '', '');
+      return id;
     } catch (err: any) {
       detail = String(err?.message || err);
     } finally {
       engine.dispose();
     }
     const choice = await vscode.window.showErrorMessage(
-      vscode.l10n.t(
-        'Read Aloud: the local Supertonic server is unavailable ({0}). No document text was sent anywhere. Start it with "supertonic serve --host 127.0.0.1 --port 7788", then retry.',
-        detail
-      ),
+      id === 'ollama'
+        ? vscode.l10n.t(
+            'Read Aloud: the local Ollama speech model is unavailable ({0}). No document text was sent anywhere. Start Ollama and install the model with "ollama pull {1}", then retry.',
+            detail,
+            model
+          )
+        : vscode.l10n.t(
+            'Read Aloud: the local Supertonic server is unavailable ({0}). No document text was sent anywhere. Start it with "supertonic serve --host 127.0.0.1 --port 7788", then retry.',
+            detail
+          ),
       retry,
       useEdge
     );
     if (choice === useEdge) return 'edge';
     if (choice !== retry) return undefined;
   }
+}
+
+function configuredOllamaModel(): string {
+  return ollamaModel(vscode.workspace.getConfiguration('markdownReadAloud').get<string>('ollamaModel'));
 }
 
 function baseName(uri: vscode.Uri): string {
@@ -297,6 +309,7 @@ async function synthesizeAll(
   const fixedLocale = autoLang ? '' : docLocale;
   const fixedVoice = autoLang ? '' : pickVoice(docLocale, gender, overrides);
   const poolSize = Math.min(MAX_CONCURRENCY, Math.max(1, Math.round(cfg.get<number>('exportConcurrency', 4))));
+  const model = configuredOllamaModel();
 
   return vscode.window.withProgress(
     {
@@ -307,7 +320,11 @@ async function synthesizeAll(
     async (progress, token) => {
       const buffers: (Buffer | null)[] = new Array(chunks.length).fill(null);
       const engines: TtsEngine[] = Array.from({ length: poolSize }, () =>
-        engineId === 'supertonic' ? new SupertonicHttpEngine() : new EdgeEngine()
+        engineId === 'supertonic'
+          ? new SupertonicHttpEngine()
+          : engineId === 'ollama'
+            ? new OllamaEngine()
+            : new EdgeEngine()
       );
       let cursor = 0;
       let done = 0;
@@ -321,9 +338,16 @@ async function synthesizeAll(
           const chunk = chunks[i];
           const clean = applyPronunciations(normalizeForSpeech(chunk.text), pronunciations);
           const locale = fixedLocale || chunk.locale;
+          // Ollama is handed the model name instead of a voice, as in the reader.
           const voice =
-            engineId === 'supertonic' ? supertonicVoiceForGender(gender) : fixedVoice || pickVoice(locale, gender, overrides);
-          const tooLong = engineId === 'supertonic' && clean.length > SUPERTONIC_MAX_INPUT_LENGTH;
+            engineId === 'supertonic'
+              ? supertonicVoiceForGender(gender)
+              : engineId === 'ollama'
+                ? model
+                : fixedVoice || pickVoice(locale, gender, overrides);
+          const tooLong =
+            (engineId === 'supertonic' && clean.length > SUPERTONIC_MAX_INPUT_LENGTH) ||
+            (engineId === 'ollama' && clean.length > OLLAMA_MAX_INPUT_LENGTH);
 
           if (clean && !tooLong) {
             try {

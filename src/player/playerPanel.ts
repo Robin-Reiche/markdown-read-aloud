@@ -7,6 +7,7 @@ import {
   SUPERTONIC_MAX_INPUT_LENGTH,
   supertonicVoiceForGender,
 } from '../engines/supertonicHttpEngine';
+import { OllamaEngine, OLLAMA_MAX_INPUT_LENGTH, ollamaModel } from '../engines/ollamaEngine';
 import { AudioCache } from './audioCache';
 import { renderMarkdownHtml } from '../markdown/render';
 import { normalizeForSpeech, applyPronunciations } from '../markdown/normalize';
@@ -48,7 +49,7 @@ const POSITIONS_KEY = 'markdownReadAloud.positions';
 const PREFS_KEY = 'markdownReadAloud.readerPrefs';
 const MAX_POSITIONS = 24;
 
-type EngineId = 'edge' | 'supertonic' | 'browser';
+type EngineId = 'edge' | 'supertonic' | 'ollama' | 'browser';
 
 /** Hard host-side cap on webview `synth` text — the webview is not a security boundary. */
 const MAX_SYNTH_INPUT = 5000;
@@ -92,7 +93,7 @@ export class PlayerPanel {
 
   private engine: TtsEngine | null = null; // created lazily so an unselected engine is never instantiated
   private engineId: EngineId = 'edge';
-  private supertonicFailureNotified = false;
+  private localFailureNotified = false;
 
   private docLocale = 'en-US';
   private activeLocale = 'en-US'; // language the manual voice/locale picker operates on
@@ -181,12 +182,12 @@ export class PlayerPanel {
     this.gender = cfg.get<Gender>('preferredGender', 'female');
     this.autoLang = cfg.get<boolean>('perParagraphLanguage', false);
     this.setEngine(this.resolveEngine(cfg));
-    this.supertonicFailureNotified = false;
-    if (this.engineId === 'supertonic') {
+    this.localFailureNotified = false;
+    if (this.engineId === 'supertonic' || this.engineId === 'ollama') {
       // availability probe (no document text) so setup problems surface immediately
       void this.hostEngine()
-        .warm('', '')
-        .catch((err: any) => void this.notifySupertonicFailure(String(err?.message || err)));
+        .warm(this.engineId === 'ollama' ? this.ollamaModel() : '', '')
+        .catch((err: any) => void this.notifyLocalFailure(String(err?.message || err)));
     }
     this.docLocale = autoDetect ? detectLocale(source, fallback).locale : fallback;
     this.activeLocale = this.docLocale;
@@ -317,7 +318,7 @@ export class PlayerPanel {
   /** The configured engine is honored as-is — never silently substituted. */
   private resolveEngine(cfg: vscode.WorkspaceConfiguration): EngineId {
     const eng = cfg.get<string>('engine', 'edge');
-    return eng === 'browser' || eng === 'supertonic' ? eng : 'edge';
+    return eng === 'browser' || eng === 'supertonic' || eng === 'ollama' ? eng : 'edge';
   }
 
   /** Switch the host-side engine, disposing the old one. */
@@ -327,39 +328,56 @@ export class PlayerPanel {
     this.engine = null;
     this.inflight.clear();
     this.engineId = id;
-    this.supertonicFailureNotified = false;
+    this.localFailureNotified = false;
   }
 
   private hostEngine(): TtsEngine {
     if (!this.engine) {
-      this.engine = this.engineId === 'supertonic' ? new SupertonicHttpEngine() : new EdgeEngine();
+      this.engine =
+        this.engineId === 'supertonic'
+          ? new SupertonicHttpEngine()
+          : this.engineId === 'ollama'
+            ? new OllamaEngine()
+            : new EdgeEngine();
     }
     return this.engine;
   }
 
+  private ollamaModel(): string {
+    return ollamaModel(vscode.workspace.getConfiguration('markdownReadAloud').get<string>('ollamaModel'));
+  }
+
   /**
-   * Fail-closed handling for the offline engine: synthesis stops, nothing is
+   * Fail-closed handling for the offline engines: synthesis stops, nothing is
    * retried against an online service, and switching to Edge is a separate,
    * explicit user action that warns text will leave the machine.
    */
-  private async notifySupertonicFailure(detail: string) {
-    if (this.supertonicFailureNotified) return;
-    this.supertonicFailureNotified = true;
+  private async notifyLocalFailure(detail: string) {
+    if (this.localFailureNotified) return;
+    this.localFailureNotified = true;
     const retry = vscode.l10n.t('Retry');
     const useBrowser = vscode.l10n.t('Use System Voices (offline)');
     const useEdge = vscode.l10n.t('Use Edge Voices (online — sends text to Microsoft)');
+    const message =
+      this.engineId === 'ollama'
+        ? vscode.l10n.t(
+            'Read Aloud: the local Ollama speech model is unavailable ({0}). No document text was sent anywhere. Start Ollama and install the model with "ollama pull {1}", then retry.',
+            detail,
+            this.ollamaModel()
+          )
+        : vscode.l10n.t(
+            'Read Aloud: the local Supertonic server is unavailable ({0}). No document text was sent anywhere. Start it with "supertonic serve --host 127.0.0.1 --port 7788", then retry.',
+            detail
+          );
     const choice = await vscode.window.showErrorMessage(
-      vscode.l10n.t(
-        'Read Aloud: the local Supertonic server is unavailable ({0}). No document text was sent anywhere. Start it with "supertonic serve --host 127.0.0.1 --port 7788", then retry.',
-        detail
-      ),
+      message,
       retry,
       useBrowser,
       useEdge
     );
     if (this.disposed) return;
     if (choice === retry) {
-      this.supertonicFailureNotified = false;
+      this.localFailureNotified = false;
       this.post({ type: 'control', action: 'playpause' });
     } else if (choice === useBrowser) {
       this.switchEngineExplicit('browser');
@@ -479,7 +497,10 @@ export class PlayerPanel {
     // Each engine has its own hard input limit. Reject the oversized sentence
     // here, so it is reported as one skipped sentence instead of surfacing as
     // an unreachable-server dialog from the engine's own rejection.
-    if (this.engineId === 'supertonic' && clean.length > SUPERTONIC_MAX_INPUT_LENGTH) {
+    if (
+      (this.engineId === 'supertonic' && clean.length > SUPERTONIC_MAX_INPUT_LENGTH) ||
+      (this.engineId === 'ollama' && clean.length > OLLAMA_MAX_INPUT_LENGTH)
+    ) {
       this.post({ type: 'audioError', id, gen: loadGen });
       return;
     }
@@ -495,6 +516,8 @@ export class PlayerPanel {
     // Supertonic voice styles (F1–F5/M1–M5) are a separate namespace — never
     // hand it an Edge voice short name.
     if (this.engineId === 'supertonic') voice = supertonicVoiceForGender(this.gender);
+    // Ollama is handed the model name instead, and the model speaks with its own voice.
+    if (this.engineId === 'ollama') voice = this.ollamaModel();
     const key = `${this.engineId}|${voice}|${locale}|${clean}`;
 
     const cached = this.cache.get(key);
@@ -521,13 +544,13 @@ export class PlayerPanel {
         if (gen === this.generation) this.sendAudio(id, ab, loadGen, locale);
       } catch (err: any) {
         if (gen !== this.generation) return;
-        if (this.engineId === 'supertonic') {
+        if (this.engineId === 'supertonic' || this.engineId === 'ollama') {
           // Fail closed: hold playback, report, and never substitute an online engine.
           // Pause rather than stop, because stop rewinds the reader to the first
           // sentence and Retry would then restart the whole document.
           this.post({ type: 'control', action: 'pause' });
           this.post({ type: 'audioError', id, gen: loadGen });
-          void this.notifySupertonicFailure(String(err?.message || err));
+          void this.notifyLocalFailure(String(err?.message || err));
         } else if (this.engineId === 'edge' && !this.hadSuccess) {
           this.setEngine('browser');
           this.edgeFellBack = true;

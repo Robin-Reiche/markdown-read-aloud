@@ -185,16 +185,24 @@
           "enum": [
             "edge",
             "supertonic",
+            "ollama",
             "browser"
           ],
           "enumDescriptions": [
             "%config.engine.enum.edge%",
             "%config.engine.enum.supertonic%",
+            "%config.engine.enum.ollama%",
             "%config.engine.enum.browser%"
           ],
           "default": "edge",
           "scope": "application",
           "markdownDescription": "%config.engine.description%"
+        },
+        "markdownReadAloud.ollamaModel": {
+          "type": "string",
+          "default": "phonon",
+          "scope": "application",
+          "markdownDescription": "%config.ollamaModel.description%"
         },
         "markdownReadAloud.preferredGender": {
           "type": "string",

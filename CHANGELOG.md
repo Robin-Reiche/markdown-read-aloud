@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- **Ollama as an offline engine.** Set `markdownReadAloud.engine` to `ollama` and the
+  reader speaks with a speech model in your local Ollama, such as Phonon, without a
+  separate Supertonic server. `markdownReadAloud.ollamaModel` picks the model, for
+  example `phonon:de` for German. Ollama's speech models currently need Apple Silicon.
+  Like Supertonic, the engine only talks to `127.0.0.1` and stops with instructions
+  when Ollama or the model is missing. It refuses cloud models, which Ollama would
+  forward to ollama.com (#11).
+
 ## 1.18.1 (2026-10-26)
 
 - **Edge voices start on the way that works.** Since October 23, Microsoft no longer

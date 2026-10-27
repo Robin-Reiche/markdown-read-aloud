@@ -10,6 +10,7 @@
   "Use System Voices (offline)": "Usa voci di sistema (offline)",
   "Use Edge Voices (online — sends text to Microsoft)": "Usa voci Edge (online — invia il testo a Microsoft)",
   "Read Aloud: the local Supertonic server is unavailable ({0}). No document text was sent anywhere. Start it with \"supertonic serve --host 127.0.0.1 --port 7788\", then retry.": "Lettura ad alta voce: il server locale Supertonic non è disponibile ({0}). Nessun testo del documento è stato inviato. Avvialo con \"supertonic serve --host 127.0.0.1 --port 7788\" e riprova.",
+  "Read Aloud: the local Ollama speech model is unavailable ({0}). No document text was sent anywhere. Start Ollama and install the model with \"ollama pull {1}\", then retry.": "Read Aloud: il modello vocale locale di Ollama non è disponibile ({0}). Nessun testo del documento è stato inviato. Avvia Ollama e installa il modello con \"ollama pull {1}\", poi riprova.",
   "Play": "Riproduci",
   "Pause": "Pausa",
   "Stop": "Interrompi",

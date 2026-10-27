@@ -133,8 +133,8 @@ folder…** to save there and remember it.
 - `markdownReadAloud.exportConcurrency` (default 4) trades speed against how hard the
   export leans on the voice service.
 
-Export needs an engine that produces audio in the extension host: **Edge** writes MP3 and
-**Supertonic** writes WAV (nothing here re-encodes audio). System voices are synthesized
+Export needs an engine that produces audio in the extension host: **Edge** writes MP3 while
+**Supertonic** and **Ollama** write WAV (nothing here re-encodes audio). System voices are synthesized
 inside the reader's webview and hand the extension no audio data, so with that engine
 selected the export asks before using Edge instead of quietly going online.
 
@@ -151,6 +151,7 @@ developers write most: Markdown.
 |---|---|---|---|
 | **Edge** (default) | ★★★ neural | online | Free, no key. Sends the text being read to Microsoft. |
 | **Supertonic** | ★★★ neural | offline | Local neural voices via a Supertonic server on your machine (see below). |
+| **Ollama** | neural | offline | A speech model such as Phonon in your local Ollama, Apple Silicon only (see below). |
 | **Browser** | ★ system | offline | Your OS voices. Automatic fallback if Edge is unreachable. |
 
 Switch via the `markdownReadAloud.engine` setting. The engine choice is an
@@ -236,11 +237,43 @@ supertonic info      # model files live in ~/.cache/supertonic3
   be archived. The PyPI package and open model weights are expected to remain
   available, but keep a fork/archive of anything you depend on.
 
+### Using Ollama (offline speech models)
+
+The Ollama engine reads with a speech model in your local [Ollama](https://ollama.com),
+so you need no extra server if Ollama already runs on your machine. Ollama's speech
+models currently need a Mac with Apple Silicon and Ollama 0.40.9 or later. One-time setup:
+
+```bash
+ollama pull phonon
+```
+
+Then set `markdownReadAloud.engine` to `ollama`. `phonon` speaks English. For another
+language, pull its tag and set it in `markdownReadAloud.ollamaModel`:
+
+```bash
+ollama pull phonon:de   # also phonon:fr, phonon:es, phonon:pt and phonon:multilingual
+```
+
+The default `phonon` model is released under Apache 2.0. The language models are 40M
+checkpoints under CC BY-NC 4.0, which allows noncommercial use only. The model speaks
+with its own voice, so the voice gender switch has no effect with this engine.
+
+Privacy behavior is the same as with Supertonic:
+
+- The extension only connects to `http://127.0.0.1:11434`, Ollama's default address.
+  An Ollama on another port or host is not reached.
+- Before the first sentence it asks Ollama whether the model is installed, can speak
+  and runs on this machine. Ollama forwards cloud models to ollama.com, so the
+  extension refuses them.
+- If Ollama is not running or the model is missing, reading **stops** with setup
+  instructions. Your text is never silently sent to an online engine instead.
+
 ## Settings
 
 | Setting | Default | Description |
 |---|---|---|
 | `markdownReadAloud.engine` | `edge` | TTS engine to use. |
+| `markdownReadAloud.ollamaModel` | `phonon` | Speech model for the Ollama engine, e.g. `phonon:de`. Cloud models are refused. |
 | `markdownReadAloud.preferredGender` | `female` | Default voice gender. |
 | `markdownReadAloud.speed` | `1.0` | Default playback speed (0.5–2.5). |
 | `markdownReadAloud.autoDetectLanguage` | `true` | Detect the document's main language and pick a matching voice. |
@@ -264,8 +297,8 @@ endpoint to synthesize audio. No account or key is required and nothing else is
 collected by this extension. This endpoint is the same one Microsoft Edge uses; it is
 unofficial for third-party use and could change. If it becomes unavailable, the
 extension automatically falls back to your system voices. For a fully offline,
-no-network experience, use the Supertonic engine (local server, see above) or
-the Browser engine (system voices). When Supertonic is selected, document text
+no-network experience, use the Supertonic or Ollama engine (local server, see above) or
+the Browser engine (system voices). When Supertonic or Ollama is selected, document text
 is only ever sent to the local loopback server — never to an online service —
 and any failure stops reading instead of falling back online.
 
