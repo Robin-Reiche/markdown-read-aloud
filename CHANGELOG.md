@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.19.0 (2026-10-27)
 
 - **No more long pause after short headings.** Microsoft's Edge voices pad short clips
   with silence up to almost two seconds, so a heading such as "Usage" was followed by
