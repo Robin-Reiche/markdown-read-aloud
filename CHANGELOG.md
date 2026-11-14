@@ -6,6 +6,9 @@
   at every dot before a capital, so ".NET Core", "Dr. Smith", "e.g. Python", "z. B." or
   "am 3. Oktober" got a pause in the middle, and a pronunciation for ".NET" never matched.
   Such dots no longer end a sentence, in the reader and in the MP3 export (#12).
+- **Reading starts about half a second sooner.** The reader opened the connection to the
+  Edge voices only when it asked for the first sentence. It now opens it while VS Code
+  builds the reader, so the first sentence plays after about 2.3 s instead of 2.8 s.
 
 ## 1.19.0 (2026-10-27)
 

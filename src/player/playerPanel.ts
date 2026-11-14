@@ -191,6 +191,13 @@ export class PlayerPanel {
     this.docLocale = autoDetect ? detectLocale(source, fallback).locale : fallback;
     this.activeLocale = this.docLocale;
     this.currentVoice = pickVoice(this.docLocale, this.gender, this.overrides());
+    if (this.engineId === 'edge') {
+      // Open the Edge connection while VS Code builds the reader webview (about
+      // 1.7 s), so the first sentence no longer waits for the handshake (about
+      // 0.5 s) on top. A failure here is left to the first synth, which retries
+      // the connection and falls back to the system voices as before.
+      void this.hostEngine().warm(this.currentVoice, this.docLocale).catch(() => undefined);
+    }
     this.generation++;
     this.hadSuccess = false;
     this.edgeFellBack = false;
