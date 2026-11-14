@@ -24,14 +24,21 @@ test('cuts the padding after a one-word heading down to the usual tail', () => {
   // Measured: "Usage" is 78 frames (1.872 s) and the word ends at 0.613 s.
   const clip = frames(78);
   const out = trimPadding(clip, speechEndSec([boundary('Usage', 875000, 5250000)]));
-  assert.equal(out.length, 41 * 144); // 0.613 s + 0.35 s, rounded up to whole frames
-  assert.deepEqual(out, clip.subarray(0, 41 * 144));
+  assert.equal(out.length, 36 * 144); // 0.613 s + 0.25 s, rounded up to whole frames
+  assert.deepEqual(out, clip.subarray(0, 36 * 144));
 });
 
-test('leaves an ordinary sentence untouched', () => {
-  // Measured: 128 frames (3.072 s), last word ends at 2.725 s, so 0.35 s of silence.
+test('cuts an ordinary sentence down to the pause Edge makes inside a text', () => {
+  // Measured: 149 frames (3.576 s), last word ends at 3.212 s, so 0.364 s of silence.
+  const clip = frames(149);
+  const out = trimPadding(clip, 3.212);
+  assert.equal(out.length, 145 * 144); // 3.212 s + 0.25 s, rounded up to whole frames
+  assert.deepEqual(out, clip.subarray(0, 145 * 144));
+});
+
+test('leaves a clip alone when less than two frames would go', () => {
   const clip = frames(128);
-  assert.equal(trimPadding(clip, 2.725), clip);
+  assert.equal(trimPadding(clip, 2.797), clip); // keeps 127 frames, so only one would go
 });
 
 test('leaves the audio untouched without usable word boundaries', () => {

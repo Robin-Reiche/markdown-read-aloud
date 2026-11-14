@@ -9,6 +9,11 @@
 - **Reading starts about half a second sooner.** The reader opened the connection to the
   Edge voices only when it asked for the first sentence. It now opens it while VS Code
   builds the reader, so the first sentence plays after about 2.3 s instead of 2.8 s.
+- **Shorter pause between sentences.** The reader reads one sentence at a time, and each
+  Edge clip ends and starts with a bit of silence. Together that made 0.49 s between two
+  sentences, where Edge itself pauses 0.40 s inside a text. The extension now keeps 0.25 s
+  after the last word, so sentences are about 0.4 s apart, in the reader and in the MP3
+  export.
 
 ## 1.19.0 (2026-10-27)
 
