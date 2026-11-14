@@ -197,8 +197,12 @@
   const isBlockish = (n) => n.nodeType === 1 && (n.matches(BLOCKISH) || !!n.querySelector(BLOCKISH));
 
   function sentencesOf(text, base) {
-    try { return [...new Intl.Segmenter(base, { granularity:'sentence' }).segment(text)]; }
+    let segs;
+    try { segs = [...new Intl.Segmenter(base, { granularity:'sentence' }).segment(text)]; }
     catch { return [{ segment:text, index:0 }]; }
+    // glue back the false cuts at ".NET", "Dr. Smith" or "am 3. Oktober" (issue #12),
+    // media/sentenceBreaks.js holds the rules shared with the audio export
+    return window.MRASentenceBreaks.joinFalseBreaks(segs);
   }
 
   function buildSegments(root) {
