@@ -721,6 +721,7 @@ export class PlayerPanel {
     const l10nBlob = JSON.stringify(L).replace(/</g, '\\u003c');
     const uiLang = vscode.env.language || 'en';
     const js = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'reader.js'));
+    const breaksJs = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'sentenceBreaks.js'));
     const css = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'reader.css'));
     const csp = [
       `default-src 'none'`,
@@ -745,6 +746,7 @@ export class PlayerPanel {
   <div id="app"></div>
   <div id="sr" class="sr-only" role="status" aria-live="polite"></div>
   <script nonce="${n}">window.__l10n=${l10nBlob};window.__uiLocale=${JSON.stringify(uiLang)};</script>
+  <script nonce="${n}" src="${breaksJs}"></script>
   <script nonce="${n}" src="${js}"></script>
 </body>
 </html>`;

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Sentences stay whole at dots that do not end them.** The reader cut a sentence in two
+  at every dot before a capital, so ".NET Core", "Dr. Smith", "e.g. Python", "z. B." or
+  "am 3. Oktober" got a pause in the middle, and a pronunciation for ".NET" never matched.
+  Such dots no longer end a sentence, in the reader and in the MP3 export (#12).
+
 ## 1.19.0 (2026-10-27)
 
 - **No more long pause after short headings.** Microsoft's Edge voices pad short clips

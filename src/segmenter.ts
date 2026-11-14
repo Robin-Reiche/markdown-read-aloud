@@ -1,4 +1,5 @@
 import type { Block, Chunk } from './types';
+import { joinFalseBreaks } from '../media/sentenceBreaks.js';
 
 const MAX_LEN = 240; // target characters per synthesized chunk
 
@@ -45,7 +46,11 @@ export function chunkBlocks(blocks: Block[], fallbackLocale: string): Chunk[] {
 }
 
 function splitToSentences(text: string, segmenter: Intl.Segmenter): string[] {
-  const raw = [...segmenter.segment(text)].map((s) => s.segment.trim()).filter(Boolean);
+  // joinFalseBreaks glues back the cuts Intl.Segmenter makes at ".NET",
+  // "Dr. Smith" or "am 3. Oktober" (issue #12), with the reader's own rules
+  const raw = joinFalseBreaks([...segmenter.segment(text)])
+    .map((s) => s.segment.trim())
+    .filter(Boolean);
   const out: string[] = [];
   let buf = '';
 
