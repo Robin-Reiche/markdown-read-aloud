@@ -9,10 +9,16 @@ const SYNTH_TIMEOUT = 30000;
 /** In FORMAT (MPEG-2 Layer III, 24 kHz, 48 kbit/s) every frame is 144 bytes and 24 ms long. */
 const FRAME_BYTES = 144;
 const FRAME_SEC = 0.024;
-/** A normal Edge sentence ends with about 0.35 s of silence. Padded clips keep the same. */
-const TAIL_SEC = 0.35;
-/** Less extra silence than this is left alone, so ordinary sentences stay byte for byte. */
-const MIN_TRIM_SEC = 0.3;
+/**
+ * Silence kept after the last word. Edge ends a sentence clip with about 0.36 s
+ * and starts the next one with about 0.13 s, so sentences read one by one were
+ * 0.49 s apart, where Edge pauses 0.40 s between two sentences in one piece
+ * (en-US-AvaMultilingualNeural, measured 2026-11-14). With 0.25 s, rounded up to
+ * whole frames, the reader pauses as long as Edge itself.
+ */
+const TAIL_SEC = 0.25;
+/** Less extra silence than this (two frames) is left alone. */
+const MIN_TRIM_SEC = 0.048;
 
 /**
  * Microsoft has two ways into the read-aloud service and keeps closing them:
@@ -77,8 +83,10 @@ export function speechEndSec(messages: string[]): number {
 /**
  * Edge pads many short clips with silence up to 1.872 s, so a one-word heading
  * such as "Usage" ends with over a second of silence where a sentence has 0.35 s
- * (#5). Cut whole frames after the last word plus that usual tail. Anything that
- * does not look like the expected frame layout is returned unchanged.
+ * (#5). en-US-AriaNeural padded every clip to about 0.88 s in November 2026.
+ * Cut whole frames after the last word plus TAIL_SEC, also in ordinary
+ * sentences. Anything that does not look like the expected frame layout is
+ * returned unchanged.
  */
 export function trimPadding(mp3: Buffer, speechEnd: number): Buffer {
   if (!(speechEnd > 0) || mp3.length % FRAME_BYTES !== 0) return mp3;
