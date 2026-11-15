@@ -1,11 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.19.1 (2026-11-15)
 
 - **Sentences stay whole at dots that do not end them.** The reader cut a sentence in two
   at every dot before a capital, so ".NET Core", "Dr. Smith", "e.g. Python", "z. B." or
-  "am 3. Oktober" got a pause in the middle, and a pronunciation for ".NET" never matched.
-  Such dots no longer end a sentence, in the reader and in the MP3 export (#12).
+  "am 3. Oktober" got a pause in the middle. A pronunciation for ".NET" never matched
+  either. Such dots no longer end a sentence, in the reader and in the MP3 export (#12).
 - **Reading starts about half a second sooner.** The reader opened the connection to the
   Edge voices only when it asked for the first sentence. It now opens it while VS Code
   builds the reader, so the first sentence plays after about 2.3 s instead of 2.8 s.
@@ -14,6 +14,9 @@
   sentences, where Edge itself pauses 0.40 s inside a text. The extension now keeps 0.25 s
   after the last word, so sentences are about 0.4 s apart, in the reader and in the MP3
   export.
+- **Security fix in the bundled network library.** The extension now ships
+  follow-redirects 1.16.3, which closes GHSA-mrwp-f3q8-3g9p in the version 1.16.1 carried.
+  The extension never sends a request through it.
 
 ## 1.19.0 (2026-10-27)
 
