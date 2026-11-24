@@ -79,7 +79,7 @@ that label.
    appear as chapter ticks) to jump anywhere.
    - Play/Pause from anywhere: `Ctrl+Alt+Space`, or click the status-bar mini-player.
    - In the reader: `Space` play/pause, `←`/`→` sentences, `+`/`−` speed, `M` mute,
-     `F` reading font, `Esc` stop.
+     `F` reading font, `Esc` stop, `Ctrl+F` find in the text.
 
 ## A reading room inside VS Code
 

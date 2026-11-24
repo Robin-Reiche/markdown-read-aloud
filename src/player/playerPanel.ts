@@ -135,6 +135,7 @@ export class PlayerPanel {
       {
         enableScripts: true,
         retainContextWhenHidden: true,
+        enableFindWidget: true,
         localResourceRoots: roots,
       }
     );
