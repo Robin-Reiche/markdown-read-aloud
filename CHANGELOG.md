@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Find in the reader.** `Ctrl+F` (`Cmd+F` on macOS) in the reader now opens the find
+  bar VS Code shows in editors, so you can search the text and jump between the hits.
+
 ## 1.19.1 (2026-11-15)
 
 - **Sentences stay whole at dots that do not end them.** The reader cut a sentence in two
